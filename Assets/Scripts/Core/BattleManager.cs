@@ -4,6 +4,7 @@ using Spellbook;
 using TMPro;
 using UnityEngine;
 using Wizardo;
+using LumbiniPark;
 
 namespace Core
 {
@@ -54,7 +55,6 @@ namespace Core
 
                 (current, other) = (other, current);
             }
-
             Debug.Log($"Winner: {(_redWizard.IsAlive ? _redWizard.name : _blueWizard.name)}");
         }
     }

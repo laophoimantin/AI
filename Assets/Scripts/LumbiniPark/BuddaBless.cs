@@ -1,9 +1,12 @@
+using UnityEngine;
+
 namespace LumbiniPark
 {
-    public class BuddaBless
+    public class BuddaBless: MonoBehaviour
     {
         void Start()
         {
+            BuddaBlessing();
         }
 
         void Update()
@@ -12,6 +15,7 @@ namespace LumbiniPark
 
         void BuddaBlessing()
         {
+            Debug.Log("Budda Blessing Activated!");
             //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             //                   _ooOoo_
             //                  o8888888o
@@ -35,7 +39,7 @@ namespace LumbiniPark
             //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             //          佛祖保佑           永无BUG
             //         God Bless        Never Crash
-            //        Phật phù hộ, không bao giờ BUG
+            //      Đức Phật phù hộ  Không bao giờ BUG
             //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
             //    ---==Đức Phật ngồi dưới cây Âm Dương==---
