@@ -15,7 +15,7 @@ namespace Spellbook
         // }
         public override float Evaluate(Agent self, Agent enemy)
         {
-            if (enemy.Health <= 0)
+            if (enemy.IsAlive)
             {
                 return 0;
             }
