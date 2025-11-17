@@ -6,6 +6,8 @@ namespace Spellbook
     [CreateAssetMenu(menuName = "AI/Spells/Shield")]
     public class ShieldSO : SpellSO
     {
+        [Range (0, 1)]
+        [SerializeField] private float _reductionPercent  = 0.5f;
         [SerializeField] private float _shieldValue = 8f;
         [SerializeField] private int _shieldDuration = 3;
 
@@ -44,7 +46,6 @@ namespace Spellbook
 
             // Mana cost penalty
             baseValue -= _manaCost * 0.2f;
-
             return Mathf.Max(0, baseValue);
         }
         
@@ -54,7 +55,7 @@ namespace Spellbook
         {
             if (self.CurrentMana < _manaCost) return;
             self.CurrentMana -= _manaCost;
-            self.AddShield(_shieldValue, _shieldDuration);
+            self.AddShield(_reductionPercent, _shieldValue, _shieldDuration);
             Debug.Log($"{self.Name} raises a shield");
         }
     }

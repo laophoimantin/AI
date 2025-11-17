@@ -20,33 +20,17 @@ namespace Spellbook
                 return 0;
             }
 
-            float damageAfterShield = _damage - enemy.ShieldValue;
-            float healthDamage = 0;
-            float shieldDamage = 0;
-
-            if (damageAfterShield > 0)
-            {
-                // Spell breaks shield and hits health
-                healthDamage = damageAfterShield;
-                shieldDamage = enemy.ShieldValue;
-            }
-            else
-            {
-                // Spell only hits shield (or does nothing)
-                healthDamage = 0;
-                shieldDamage = _damage;
-            }
-    
+            float reduction = enemy.ReductionPercent;
+            float damageDealt = _damage * (1.0f - reduction);
 
             // If this spell can kiel
-            if (enemy.Health <= healthDamage)
+            if (enemy.Health <= damageDealt)
             {
-                return 1000 + _damage; 
+                return 1000;
             }
+    
+            float baseValue = (damageDealt * 1.0f) - (_manaCost * 0.4f);
             
-            // Value health damage and shield damage 
-            float baseValue = (healthDamage * 1.0f) + (shieldDamage * 0.5f);
-
             //If the enemy is low, damage is more valuable
             if (enemy.Health < 30)
             {

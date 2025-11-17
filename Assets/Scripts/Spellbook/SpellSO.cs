@@ -11,6 +11,7 @@ namespace Spellbook
         [SerializeField] protected string _spellName;
         [SerializeField] protected float _manaCost;
         [SerializeField] protected int _cooldownTurns;
+        
 
         #endregion
 

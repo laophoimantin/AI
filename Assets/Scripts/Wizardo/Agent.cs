@@ -14,6 +14,7 @@ namespace Wizardo
         [SerializeField] private float _manaRegenRate = 2f;
         private float _currentMana;
         
+        private float _reductionPercent = 0f;
         private float _shieldValue = 0f;
         private int _shieldDuration = 0;
         
@@ -21,6 +22,8 @@ namespace Wizardo
         private List<SpellInstance> _spells = new();
         private SpellSO _currentSpellSo;
         private SpellInstance _currentSpell;
+        
+        private float _minimumActionThreshold = 10f;
 
         #endregion
 
@@ -40,6 +43,7 @@ namespace Wizardo
         
         public bool IsAlive => _health > 0;
         
+        public float ReductionPercent => _reductionPercent;
         public int ShieldDuration => _shieldDuration;
         public float ShieldValue => _shieldValue;
 
@@ -68,9 +72,7 @@ namespace Wizardo
             if (_shieldDuration > 0)
                 _shieldDuration--;
             if (_shieldDuration == 0)
-            {
                 _shieldValue = 0f;
-            }
         }
         
   
@@ -106,22 +108,22 @@ namespace Wizardo
             self.DecayShield();
         }
         
-        public void AddShield(float amount, int duration)
+        public void AddShield(float percent, float value, int duration)
         {
-            _shieldValue += amount;
+            _reductionPercent = Mathf.Clamp01(percent);
+            _shieldValue = value;
             _shieldDuration = duration;
         }
         
-        public void ApplyDamage(float amount)
+        public void ApplyDamage(float damage)
         {
-            float remaining = amount;
+            float actualDamage = 0f;
             if (_shieldValue > 0)
             {
-                float absorbed = Mathf.Min(_shieldValue, amount);
-                _shieldValue -= absorbed;
-                remaining -= absorbed;
+                actualDamage = damage * (1.0f - _reductionPercent);
+                _shieldValue -= actualDamage;
             }
-            _health -= remaining;
+            _health -= actualDamage;
         }
         
         
@@ -160,85 +162,46 @@ namespace Wizardo
         
 
 
-        private void DrawLabel(Vector2 screenPoint, string text, float yOffset)
-        {
-            var style = GUI.skin.label;
-
-            var content = new GUIContent(text);
-            var size = style.CalcSize(content);
-
-            float x = screenPoint.x - (size.x / 2f);
-
-            float y = Screen.height - screenPoint.y - size.y - yOffset;
-
-            GUI.Label(new Rect(x, y, size.x, size.y), text);
-        }
-
-        public void OnGUI()
-        {
-            float LINESPACING = 20f;
-            
-            if (!Camera.main) return;
-            var worldPoint = transform.position + Vector3.up * 5f;
-            Vector2 p = Camera.main.WorldToScreenPoint(worldPoint);
-
-            float lineIndex = 0;
-
-            DrawLabel(p, _wizardName, lineIndex * LINESPACING);
-            lineIndex++;
-
-            DrawLabel(p, $"Health: {_health}", lineIndex * LINESPACING);
-            lineIndex++;
-
-            DrawLabel(p, $"Mana: {_currentMana}", lineIndex * LINESPACING);
-            lineIndex++;
-
-            string currentSpellLabel = _currentSpell != null
-                ? $"Current Spell: {_currentSpell.GetSpellName}"
-                : $"No Spell";
-
-            DrawLabel(p, currentSpellLabel, lineIndex * LINESPACING);
-        }
-
-        // private void OnGUI()
+        // private void DrawLabel(Vector2 screenPoint, string text, float yOffset)
         // {
-        //     if (!Camera.main) return;
+        //     var style = GUI.skin.label;
         //
-        //     var worldPoint = transform.position + Vector3.up * 5f;
-        //     var p = Camera.main.WorldToScreenPoint(worldPoint);
+        //     var content = new GUIContent(text);
+        //     var size = style.CalcSize(content);
         //
-        //     if (p.z > 0)
-        //     {
-        //         var nameSize = GUI.skin.label.CalcSize(new GUIContent(_wizardName));
-        //         GUI.Label(new Rect(p.x - nameSize.x / 3f, Screen.height - p.y - nameSize.y, nameSize.x, nameSize.y),
-        //             _wizardName);
+        //     float x = screenPoint.x - (size.x / 2f);
         //
-        //         string healthLabel = $"Health: {_health}";
-        //         var healthSize = GUI.skin.label.CalcSize(new GUIContent(healthLabel));
-        //         GUI.Label(
-        //             new Rect(p.x - healthSize.x / 3f, Screen.height - p.y - healthSize.y - 20, healthSize.x, healthSize.y),
-        //             healthLabel);
+        //     float y = Screen.height - screenPoint.y - size.y - yOffset;
         //
-        //         string manaLabel = $"Mana: {_mana}";
-        //         var manaSize = GUI.skin.label.CalcSize(new GUIContent(manaLabel));
-        //         GUI.Label(new Rect(p.x - manaSize.x / 3f, Screen.height - p.y - manaSize.y - 40, manaSize.x, manaSize.y),
-        //             manaLabel);
-        //
-        //         if (_currentSpell != null)
-        //         {
-        //             string currentSpellLabel = $"Current Spell: {_currentSpell.SpellName}";
-        //             var currentSpellSize = GUI.skin.label.CalcSize(new GUIContent(currentSpellLabel));
-        //             GUI.Label(
-        //                 new Rect(p.x - currentSpellSize.x / 3f, Screen.height - p.y - currentSpellSize.y - 60, currentSpellSize.x, currentSpellSize.y), currentSpellLabel);
-        //         }
-        //         else
-        //         {
-        //             string currentSpellLabel = $"No Spell";
-        //             var currentSpellSize = GUI.skin.label.CalcSize(new GUIContent(currentSpellLabel));
-        //             GUI.Label(
-        //                 new Rect(p.x - currentSpellSize.x / 3f, Screen.height - p.y - currentSpellSize.y - 60, currentSpellSize.x, currentSpellSize.y), currentSpellLabel);
-        //         }
-        //     }
+        //     GUI.Label(new Rect(x, y, size.x, size.y), text);
         // }
+        //
+        // public void OnGUI()
+        // {
+        //     float LINESPACING = 20f;
+        //     
+        //     if (!Camera.main) return;
+        //     var worldPoint = transform.position + Vector3.up * 5f;
+        //     Vector2 p = Camera.main.WorldToScreenPoint(worldPoint);
+        //
+        //     float lineIndex = 0;
+        //
+        //     DrawLabel(p, _wizardName, lineIndex * LINESPACING);
+        //     lineIndex++;
+        //
+        //     DrawLabel(p, $"Health: {_health}", lineIndex * LINESPACING);
+        //     lineIndex++;
+        //
+        //     DrawLabel(p, $"Mana: {_currentMana}", lineIndex * LINESPACING);
+        //     lineIndex++;
+        //
+        //     string currentSpellLabel = _currentSpell != null
+        //         ? $"Current Spell: {_currentSpell.GetSpellName}"
+        //         : $"No Spell";
+        //
+        //     DrawLabel(p, currentSpellLabel, lineIndex * LINESPACING);
+        // }
+
+       
     }
 }
