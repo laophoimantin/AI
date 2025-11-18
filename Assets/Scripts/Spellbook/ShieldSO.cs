@@ -27,12 +27,12 @@ namespace Spellbook
             
             float baseValue = _shieldValue;
             
-            if (self.Health < 40)
+            if (self.CurrentHealth < 40)
             {
                 // The AI desperately needs this shield or it will die
                 baseValue *= 2.5f; 
             }
-            else if (self.Health < 70)
+            else if (self.CurrentHealth < 70)
             {
                 // If the health is low, a shield would be a good idea
                 baseValue *= 1.5f;
@@ -54,7 +54,7 @@ namespace Spellbook
         public override void Cast(Agent self, Agent enemy)
         {
             if (self.CurrentMana < _manaCost) return;
-            self.CurrentMana -= _manaCost;
+            self.UpdateMana(-_manaCost);
             self.AddShield(_reductionPercent, _shieldValue, _shieldDuration);
             Debug.Log($"{self.Name} raises a shield");
         }

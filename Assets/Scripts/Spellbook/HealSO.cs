@@ -10,7 +10,7 @@ namespace Spellbook
 
         public override float Evaluate(Agent self, Agent enemy)
         {
-            float missingHealth = 100 - self.Health;
+            float missingHealth = 100 - self.CurrentHealth;
             if (missingHealth < 5)  // If the AI has enough health, don't cast
             {
                 return 0;
@@ -20,11 +20,11 @@ namespace Spellbook
             
             float baseValue = actualHealAmount * 1f;
             
-            if (self.Health < 30) // If the AI is low on health
+            if (self.CurrentHealth < 30) // If the AI is low on health
             {
                 baseValue *= 3.0f; 
             }
-            else if (self.Health < 60) // If the AI is medium on health
+            else if (self.CurrentHealth < 60) // If the AI is medium on health
             {
                 baseValue *= 1.5f;
             }
@@ -38,8 +38,8 @@ namespace Spellbook
         public override void Cast(Agent self, Agent enemy)
         {
             if (self.CurrentMana < _manaCost) return;
-            self.CurrentMana -= _manaCost;
-            self.Health = Mathf.Min(100, self.Health + _healAmount);
+            self.UpdateMana(-_manaCost);
+            self.UpdateHealth(_healAmount);
             Debug.Log($"{self.name} heals (+{_healAmount} HP)");
         }
         

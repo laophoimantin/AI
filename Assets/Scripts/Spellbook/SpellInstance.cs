@@ -5,19 +5,12 @@ namespace Spellbook
 {
     public class SpellInstance
     {
-        #region Private Fields
-
         private readonly SpellSO _spell;
         private int _currentCooldown;
-
-        #endregion
-
-        #region Public Fields
 
         public SpellSO Spell => _spell;
         public string GetSpellName => Spell.SpellName;
 
-        #endregion
 
         public SpellInstance(SpellSO spell)
         {

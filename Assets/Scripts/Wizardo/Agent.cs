@@ -6,67 +6,85 @@ namespace Wizardo
 {
     public class Agent : MonoBehaviour
     {
-        #region Private Fields
+        [Header("UI Bars")]
+        [SerializeField] private Bar _healthBar;
+        [SerializeField] private Bar _manaBar;
 
+        [Space(1)]
+        [Header("Wizard Stats")]
         [SerializeField] private string _wizardName;
-        [SerializeField] private float _health;
+        [SerializeField] private float _maxHealth;
+        private float _currentHealth;
         [SerializeField] private float _maxMana = 30f;
         [SerializeField] private float _manaRegenRate = 2f;
         private float _currentMana;
-        
+
         private float _reductionPercent = 0f;
         private float _shieldValue = 0f;
         private int _shieldDuration = 0;
-        
+
         //[SerializeField] private List<SpellSO> _spells = new();
         private List<SpellInstance> _spells = new();
         private SpellSO _currentSpellSo;
         private SpellInstance _currentSpell;
-        
+
         private float _minimumActionThreshold = 10f;
 
-        #endregion
 
-        #region Public Fields
         public string Name => _wizardName;
-        public float Health
-        {
-            get => _health;
-            set => _health = value;
-        }
+        public float CurrentHealth => _currentHealth;
 
-        public float CurrentMana
-        {
-            get => _currentMana;
-            set => _currentMana = value;
-        }
-        
-        public bool IsAlive => _health > 0;
-        
+        public float CurrentMana => _currentMana;
+
+
+        public bool IsAlive => _currentHealth > 0;
+
         public float ReductionPercent => _reductionPercent;
         public int ShieldDuration => _shieldDuration;
         public float ShieldValue => _shieldValue;
 
-        #endregion
+
 
         void Start()
         {
+            _currentHealth = _maxHealth;
             _currentMana = _maxMana;
+            UpdateHealthBar();
         }
-        
+
         public void Initialize(List<SpellSO> spellTemplates)
         {
             _spells.Clear();
             foreach (var spell in spellTemplates)
                 _spells.Add(new SpellInstance(spell));
         }
-        
+
         private void TickCooldowns()
         {
             foreach (var spell in _spells)
                 spell.TickCooldown();
         }
-        
+
+        public void UpdateHealth(float value)
+        {
+            _currentHealth = Mathf.Min(_maxHealth, _currentHealth + value);
+            _healthBar.UpdateBar(_maxHealth, _currentHealth);
+        }
+
+        public void UpdateMana(float value)
+        {
+            _currentMana = Mathf.Min(_maxMana, _currentMana + value);
+            _manaBar.UpdateBar(_maxMana, _currentMana);
+        }
+
+
+
+
+
+
+
+
+
         private void DecayShield()
         {
             if (_shieldDuration > 0)
@@ -74,8 +92,8 @@ namespace Wizardo
             if (_shieldDuration == 0)
                 _shieldValue = 0f;
         }
-        
-  
+
+
         public void TakeTurn(Agent self, Agent enemy)
         {
             SpellInstance best = null;
@@ -92,7 +110,7 @@ namespace Wizardo
                     best = spell;
                 }
             }
-            
+
             _currentSpell = best;
             if (_currentSpell != null)
             {
@@ -103,18 +121,18 @@ namespace Wizardo
                 Debug.Log($"{self.Name} has no valid spell to cast.");
             }
 
-            _currentMana = Mathf.Min(_maxMana, _currentMana + _manaRegenRate);
+            UpdateMana(_manaRegenRate);
             self.TickCooldowns();
             self.DecayShield();
         }
-        
+
         public void AddShield(float percent, float value, int duration)
         {
             _reductionPercent = Mathf.Clamp01(percent);
             _shieldValue = value;
             _shieldDuration = duration;
         }
-        
+
         public void ApplyDamage(float damage)
         {
             float actualDamage = 0f;
@@ -123,12 +141,31 @@ namespace Wizardo
                 actualDamage = damage * (1.0f - _reductionPercent);
                 _shieldValue -= actualDamage;
             }
-            _health -= actualDamage;
+            UpdateHealth(-actualDamage);
         }
-        
-        
-        
-        
+
+
+
+        public void UpdateHealthBar()
+        {
+            if (_healthBar != null)
+                _healthBar.UpdateBar(_maxHealth, _currentHealth);
+        }
+
+        public void UpdateManaBar()
+        {
+            if (_manaBar != null)
+                _manaBar.UpdateBar(_maxMana, _currentMana);
+        }
+
+
+
+
+
+
+
+
+
         // public void TakeTurn(Agent enemy)
         // {
         //     SpellSO bestSpellSo = null;
@@ -159,7 +196,7 @@ namespace Wizardo
         //     _currentMana = Mathf.Min(_maxMana, _currentMana + _manaRegenRate);
         // }
 
-        
+
 
 
         // private void DrawLabel(Vector2 screenPoint, string text, float yOffset)
@@ -202,6 +239,6 @@ namespace Wizardo
         //     DrawLabel(p, currentSpellLabel, lineIndex * LINESPACING);
         // }
 
-       
+
     }
 }

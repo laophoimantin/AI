@@ -37,7 +37,7 @@ namespace Spellbook
     
 
             // If this spell can kiel
-            if (enemy.Health <= healthDamage)
+            if (enemy.CurrentHealth <= healthDamage)
             {
                 return 800 + _damage; 
             }
@@ -46,7 +46,7 @@ namespace Spellbook
             float baseValue = (healthDamage * 1.0f) + (shieldDamage * 0.5f);
 
             //If the enemy is low, damage is more valuable
-            if (enemy.Health < 30)
+            if (enemy.CurrentHealth < 30)
             {
                 baseValue *= 1.5f;
             }
@@ -60,7 +60,7 @@ namespace Spellbook
         public override void Cast(Agent self, Agent enemy)
         {
             if (self.CurrentMana < _manaCost) return;
-            self.CurrentMana -= _manaCost;
+            self.UpdateMana(-_manaCost);
             enemy.ApplyDamage(_damage);
             Debug.Log($"{self.Name} uses {_spellName} (-{_damage} HP)");
         }

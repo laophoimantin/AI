@@ -10,7 +10,6 @@ namespace Core
 {
     public class BattleManager : MonoBehaviour
     {
-        #region Private Fields
 
         [SerializeField] private Agent _redWizard;
         [SerializeField] private Agent _blueWizard;
@@ -19,7 +18,6 @@ namespace Core
         [SerializeField] private TextMeshProUGUI _roundDisplay;
         private int _currentRound;
 
-        #endregion
 
 
         void Start()
