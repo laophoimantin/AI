@@ -1,7 +1,7 @@
 using UnityEngine;
 using Wizardo;
 
-namespace Spellbook
+namespace Spells
 {
     [CreateAssetMenu(menuName = "AI/Spells/Shield")]
     public class ShieldSO : SpellSO
@@ -51,12 +51,13 @@ namespace Spellbook
         
         
 
-        public override void Cast(Agent self, Agent enemy)
+        public override void ApplyEffect(Agent user, Agent enemy)
         {
-            if (self.CurrentMana < _manaCost) return;
-            self.UpdateMana(-_manaCost);
-            self.AddShield(_reductionPercent, _shieldValue, _shieldDuration);
-            Debug.Log($"{self.Name} raises a shield");
+            if (user.CurrentMana < _manaCost) return;
+            user.ModifyMana(-_manaCost);
+            user.AddShield(_reductionPercent, _shieldValue, _shieldDuration);
+            
+            Debug.Log($"{user.Name} raises a shield");
         }
     }
 }

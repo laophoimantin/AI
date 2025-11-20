@@ -2,8 +2,9 @@ using UnityEngine;
 using Wizardo;
 
 
-namespace Spellbook
+namespace Spells
 {
+    // Big Button
     [CreateAssetMenu(menuName = "AI/Spells/DarkBlast")]
     public class DarkBlastSO : SpellSO
     {
@@ -57,12 +58,12 @@ namespace Spellbook
             return Mathf.Max(0, baseValue);
         }
 
-        public override void Cast(Agent self, Agent enemy)
+        public override void ApplyEffect(Agent user, Agent enemy)
         {
-            if (self.CurrentMana < _manaCost) return;
-            self.UpdateMana(-_manaCost);
+            if (user.CurrentMana < _manaCost) return;
+            user.ModifyMana(-_manaCost);
             enemy.ApplyDamage(_damage);
-            Debug.Log($"{self.Name} uses {_spellName} (-{_damage} HP)");
+            Debug.Log($"{user.Name} uses {_name} (-{_damage} HP)");
         }
     }
 }

@@ -9,10 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fed37a3ea1164fa78825ad3c33cc717b, type: 3}
-  m_Name: Heal Spell
+  m_Script: {fileID: 11500000, guid: b65fa9cb04ce47288ee393d42634c90d, type: 3}
+  m_Name: Shield Spell
   m_EditorClassIdentifier: 
-  _spellName: Heal
-  _manaCost: 25
+  _iconSprite: {fileID: 21300000, guid: 26f37ea7ea7059e40b52f0ed2d9c0e0e, type: 3}
+  _name: Shield
+  _manaCost: 20
   _cooldownTurns: 2
-  _healAmount: 30
+  _reductionPercent: 0.5
+  _shieldValue: 25
+  _shieldDuration: 3

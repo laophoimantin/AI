@@ -1,171 +1,289 @@
+using System;
 using System.Collections.Generic;
-using Spellbook;
+using System.Linq;
+using Core;
+using Spells;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Wizardo
 {
     public class Agent : MonoBehaviour
     {
-        [Header("UI Bars")]
-        [SerializeField] private Bar _healthBar;
-        [SerializeField] private Bar _manaBar;
+        // --- EVENTS ---
+        public event Action<float, float> OnHealthChanged; 
+        public event Action<float, float> OnManaChanged;  
+        public event Action<string> OnDeath;
+        
+        
+        [Header("AI Personality")]
+        [SerializeField] private PersonalitySO _personality;
 
-        [Space(1)]
         [Header("Wizard Stats")]
         [SerializeField] private string _wizardName;
         [SerializeField] private float _maxHealth;
-        private float _currentHealth;
         [SerializeField] private float _maxMana = 30f;
         [SerializeField] private float _manaRegenRate = 2f;
+        
+        // --- STATE ---
+        private float _currentHealth;
         private float _currentMana;
+        private float _reductionPercent;
+        private float _shieldValue;
+        private int _shieldDuration;
+        
 
-        private float _reductionPercent = 0f;
-        private float _shieldValue = 0f;
-        private int _shieldDuration = 0;
-
-        //[SerializeField] private List<SpellSO> _spells = new();
-        private List<SpellInstance> _spells = new();
-        private SpellSO _currentSpellSo;
-        private SpellInstance _currentSpell;
-
-        private float _minimumActionThreshold = 10f;
-
-
+        // Getters
         public string Name => _wizardName;
         public float CurrentHealth => _currentHealth;
-
+        public float MaxHealth => _maxHealth; 
         public float CurrentMana => _currentMana;
-
-
         public bool IsAlive => _currentHealth > 0;
-
         public float ReductionPercent => _reductionPercent;
         public int ShieldDuration => _shieldDuration;
         public float ShieldValue => _shieldValue;
-
-
+        
+        
+        [Header("Spells")]        
+        [SerializeField] private SpellInstance _spellInstancePrefab;
+        [SerializeField] private Transform _spellContainer;
+        private readonly List<SpellInstance> _spellBook = new();
+        private SpellInstance _currentSpell;
+        
 
         void Start()
         {
             _currentHealth = _maxHealth;
             _currentMana = _maxMana;
-            UpdateHealthBar();
+        
+            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+            OnManaChanged?.Invoke(_currentMana, _maxMana);
         }
 
         public void Initialize(List<SpellSO> spellTemplates)
         {
-            _spells.Clear();
+            foreach(Transform child in _spellContainer) 
+                Destroy(child.gameObject);
+            
+            _spellBook.Clear();
             foreach (var spell in spellTemplates)
-                _spells.Add(new SpellInstance(spell));
+            {
+                SpellInstance instance = Instantiate(_spellInstancePrefab, _spellContainer);
+                instance.Init(spell);
+                _spellBook.Add(instance);
+            }
         }
 
-        private void TickCooldowns()
+        // Main Logic ==================================================================================================
+      
+        
+        
+         public void TakeTurn(Agent enemy)
         {
-            foreach (var spell in _spells)
-                spell.TickCooldown();
-        }
+            if (!IsAlive) return;
+            
+            ModifyMana(_manaRegenRate);
+            DecayShield();
+            ReduceCooldown();
+            
+            Dictionary<SpellInstance, float> spellChances = new Dictionary<SpellInstance, float>();
+            float totalWeight = 0f;
 
-        public void UpdateHealth(float value)
+            foreach (var spellInstance in _spellBook)
+            {
+                if (!spellInstance.IsReady(this)) continue;
+
+                float rawScore = spellInstance.Spell.Evaluate(this, enemy);
+                
+                if (rawScore <= 0) continue; 
+
+                float personalityMod = 1.0f;
+                if (_personality != null)
+                {
+                    switch (spellInstance.Spell.Type)
+                    {
+                        case SpellType.Offense: 
+                            personalityMod = _personality.Aggression; 
+                            break;
+                        case SpellType.Defense: 
+                            personalityMod = _personality.Caution;
+                            break;
+                        case SpellType.Utility: 
+                            personalityMod = _personality.Utility;
+                            break; 
+                    }
+                }
+
+                float finalScore = rawScore * personalityMod;
+
+                if (_personality != null)
+                {
+                    float noise = UnityEngine.Random.Range(1.0f - _personality.Randomness, 1.0f + _personality.Randomness);
+                    finalScore *= noise;
+                }
+
+                spellChances.Add(spellInstance, finalScore);
+                totalWeight += finalScore;
+            }
+
+            // 3. Decision Phase (Weighted Random)
+            SpellInstance selectedSpell = null;
+
+            if (spellChances.Count > 0)
+            {
+                float randomPick = UnityEngine.Random.Range(0, totalWeight);
+                float currentSum = 0;
+
+                foreach (var pair in spellChances)
+                {
+                    currentSum += pair.Value;
+                    if (currentSum >= randomPick)
+                    {
+                        selectedSpell = pair.Key;
+                        break;
+                    }
+                }
+                
+                // Fallback: If math failed due to float errors, pick the highest score
+                if (selectedSpell == null)
+                {
+                    selectedSpell = spellChances.OrderByDescending(x => x.Value).First().Key;
+                }
+            }
+
+            // 4. Action Phase
+            _currentSpell = selectedSpell;
+            
+            if (_currentSpell != null)
+            {
+                // Note: Ensure ExecuteSpell calls SpellSO.Cast internally
+                _currentSpell.ExecuteSpell(this, enemy);
+                BattleManager.Instance.DisplayCombatMessage($"{Name} casts {_currentSpell.Spell.Name}");
+            }
+            else
+            {
+                Debug.Log($"{_wizardName} has no valid spell to cast.");
+                BattleManager.Instance.DisplayCombatMessage($"{Name} skips turn (No valid spells).");
+            }
+        }
+        
+        
+        // Method =======================================================================================================
+        private void ReduceCooldown()
         {
-            _currentHealth = Mathf.Min(_maxHealth, _currentHealth + value);
-            _healthBar.UpdateBar(_maxHealth, _currentHealth);
+            foreach (var spell in _spellBook)
+                spell.ReduceCooldown();
         }
-
-        public void UpdateMana(float value)
-        {
-            _currentMana = Mathf.Min(_maxMana, _currentMana + value);
-            _manaBar.UpdateBar(_maxMana, _currentMana);
-        }
-
-
-
-
-
-
-
-
 
         private void DecayShield()
         {
             if (_shieldDuration > 0)
-                _shieldDuration--;
-            if (_shieldDuration == 0)
-                _shieldValue = 0f;
-        }
-
-
-        public void TakeTurn(Agent self, Agent enemy)
-        {
-            SpellInstance best = null;
-            float bestValue = float.MinValue;
-
-            foreach (var spell in self._spells)
             {
-                if (!spell.CanCast(self)) continue;
-
-                float value = spell.Spell.Evaluate(self, enemy);
-                if (value > bestValue)
+                _shieldDuration--;
+                if (_shieldDuration <= 0)
                 {
-                    bestValue = value;
-                    best = spell;
+                    _shieldValue = 0f;
+                    _reductionPercent = 0f; 
+                    BattleManager.Instance.DisplayCombatMessage($"{Name}'s shield faded.");
                 }
             }
-
-            _currentSpell = best;
-            if (_currentSpell != null)
-            {
-                _currentSpell.Cast(self, enemy);
-            }
-            else
-            {
-                Debug.Log($"{self.Name} has no valid spell to cast.");
-            }
-
-            UpdateMana(_manaRegenRate);
-            self.TickCooldowns();
-            self.DecayShield();
         }
 
-        public void AddShield(float percent, float value, int duration)
+        public void AddShield(float reductionPercent, float shieldAmount, int duration)
         {
-            _reductionPercent = Mathf.Clamp01(percent);
-            _shieldValue = value;
+            _reductionPercent = Mathf.Clamp01(reductionPercent);
+            _shieldValue = shieldAmount;
             _shieldDuration = duration;
         }
 
-        public void ApplyDamage(float damage)
+        public void ApplyDamage(float incomingDamage)
         {
-            float actualDamage = 0f;
+            if (!IsAlive) return;
+
+            float finalDamage = incomingDamage;
+
+            if (_shieldValue > 0) 
+            {
+                finalDamage *= (1.0f - _reductionPercent);
+            }
+
             if (_shieldValue > 0)
             {
-                actualDamage = damage * (1.0f - _reductionPercent);
-                _shieldValue -= actualDamage;
+                if (_shieldValue >= finalDamage)
+                {
+                    _shieldValue -= finalDamage;
+                    finalDamage = 0;
+                }
+                else
+                {
+                    finalDamage -= _shieldValue;
+                    _shieldValue = 0;
+                }
             }
-            UpdateHealth(-actualDamage);
+
+            if (finalDamage > 0)
+            {
+                ModifyHealth(-finalDamage);
+            }
         }
-
-
-
-        public void UpdateHealthBar()
+        
+        public void ModifyHealth(float amount)
         {
-            if (_healthBar != null)
-                _healthBar.UpdateBar(_maxHealth, _currentHealth);
+            _currentHealth = Mathf.Clamp(_currentHealth + amount, 0, _maxHealth);
+            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+
+            if (_currentHealth <= 0)
+            {
+                OnDeath?.Invoke(_wizardName);
+            }
         }
 
-        public void UpdateManaBar()
+        public void ModifyMana(float amount)
         {
-            if (_manaBar != null)
-                _manaBar.UpdateBar(_maxMana, _currentMana);
+            _currentMana = Mathf.Clamp(_currentMana + amount, 0, _maxMana);
+            OnManaChanged?.Invoke(_currentMana, _maxMana);
         }
 
 
 
 
-
-
-
-
-
+        // public void TakeTurn(Agent enemy)
+        // {
+        //     if (!IsAlive) return;
+        //     
+        //     ModifyMana(_manaRegenRate);
+        //     DecayShield();
+        //     ReduceCooldown();
+        //     
+        //     SpellInstance bestSpell = null;
+        //     float bestValue = float.MinValue;
+        //
+        //     foreach (var spell in _spellBook)
+        //     {
+        //         if (!spell.IsReady(this)) continue;
+        //
+        //         float value = spell.Spell.Evaluate(this, enemy);
+        //         if (value > bestValue)
+        //         {
+        //             bestValue = value;
+        //             bestSpell = spell;
+        //         }
+        //     }
+        //
+        //     _currentSpell = bestSpell;
+        //     
+        //     
+        //     if (_currentSpell != null)
+        //     {
+        //         _currentSpell.ExecuteSpell(this, enemy);
+        //         BattleManager.Instance.DisplayCombatMessage($"{Name} casts {_currentSpell.Spell.Name}");
+        //     }
+        //     else
+        //     {
+        //         Debug.Log($"{_wizardName} has no valid spell to cast.");
+        //         BattleManager.Instance.DisplayCombatMessage($"{Name} skips turn (No valid spells).");
+        //     }
+        // }
         // public void TakeTurn(Agent enemy)
         // {
         //     SpellSO bestSpellSo = null;
@@ -195,10 +313,6 @@ namespace Wizardo
         //     
         //     _currentMana = Mathf.Min(_maxMana, _currentMana + _manaRegenRate);
         // }
-
-
-
-
         // private void DrawLabel(Vector2 screenPoint, string text, float yOffset)
         // {
         //     var style = GUI.skin.label;
@@ -238,7 +352,5 @@ namespace Wizardo
         //
         //     DrawLabel(p, currentSpellLabel, lineIndex * LINESPACING);
         // }
-
-
     }
 }

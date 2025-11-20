@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Bar : MonoBehaviour
+public class UIBar : MonoBehaviour
 {
     [SerializeField] private Image _barImage;
     [SerializeField] private TextMeshProUGUI _text;
