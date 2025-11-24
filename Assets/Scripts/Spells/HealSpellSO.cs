@@ -4,41 +4,44 @@ using Wizardo;
 namespace Spells
 {
     [CreateAssetMenu(menuName = "AI/Spells/Heal")]
-    public class HealSO : SpellSO
+    public class HealSpellSO : BaseSpellSO
     {
-
-        public override float Evaluate(Agent user, Agent enemy)
+        protected override float EvaluateInternal(Agent user, Agent target)
         {
+            if (!target.IsAlive)
+                return 0;
+            if (user.CurrentMana < _manaCost) 
+                return 0;
+
+            _spellScore = 0f;
+            
             float missingHealth = user.MaxHealth - user.CurrentHealth;
             if (missingHealth < 5) return 0;
             
             float actualHealAmount = Mathf.Min(missingHealth, _power);
             
-            float baseValue = actualHealAmount;
+            _spellScore  = actualHealAmount;
             
             float healthPct = user.CurrentHealth / user.MaxHealth;
             if (healthPct < 0.3f) // Critical (< 30%)
             {
-                baseValue *= 3.0f; 
+                _spellScore *= 3.0f; 
             }
             else if (healthPct < 0.6f) // Wounded (< 60%)
             {
-                baseValue *= 1.5f;
+                _spellScore *= 1.5f;
             }
             
             // Mana cost penalty
-            baseValue -= _manaCost * 0.5f;
+            _spellScore -= _manaCost * 0.5f;
             
-            return Mathf.Max(0, baseValue);
+            return Mathf.Max(0, _spellScore);
         }
         
-        public override void ApplyEffect(Agent user, Agent enemy)
+        protected override void SpellEffect(Agent user, Agent target)
         {
-            if (user.CurrentMana < _manaCost) return;
-            user.ModifyMana(-_manaCost);
-            user.ModifyHealth(_power);
+            user.Heal(_power);
             Debug.Log($"{user.name} heals (+{_power} HP)");
         }
-        
     }
 }

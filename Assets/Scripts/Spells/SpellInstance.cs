@@ -1,29 +1,3 @@
-/*
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                      _ooOoo_
-                     o8888888o
-                     88" . "88
-                     (| -_- |)
-                     O\  =  /O
-                  ____/`---'\____
-                .'  \\|     |//  `.
-               /  \\|||  :  |||//  \
-              /  _||||| -:- |||||-  \
-              |   | \\\  -  /// |   |
-              | \_|  ''\---/''  |   |
-              \  .-\__  `-`  ___/-. /
-            ___`. .'  /--.--\  `. . __
-         ."" '<  `.___\_<|>_/___.'  >'"".
-        | | :  `- \`.;`\ _ /`;.`/ - ` : | |
-        \  \ `-.   \_ __\ /__ _/   .-` /  /
-    ======`-.____`-.___\_____/___.-`____.-'======
-                      `=---='
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-              佛祖保佑           永无BUG
-             God Bless        Never Crash
-           Phật phù hộ, không bao giờ BUG
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-*/
 
 using UnityEngine;
 using Wizardo;
@@ -35,22 +9,22 @@ namespace Spells
         [Header("UI")]
         [SerializeField] private GameUI.SpellIcon _icon; 
         
-        public SpellSO Spell { get; private set; }
+        public BaseSpellSO BaseSpell { get; private set; }
         private int _currentCooldown = 0;
         
-        public string GetSpellName => Spell.Name;
+        public string GetSpellName => BaseSpell.Name;
 
-        public void Init(SpellSO spell)
+        public void Init(BaseSpellSO baseSpell)
         {
-            Spell = spell;
+            BaseSpell = baseSpell;
             _currentCooldown = 0;
             
-            gameObject.name = $"Instance_{Spell.Name}";
+            gameObject.name = $"Instance_{BaseSpell.Name}";
             
             if (_icon != null)
             {
-                _icon.UpdateIcon(Spell.Icon);
-                _icon.UpdateCooldown(Spell.CooldownTurns, _currentCooldown);
+                _icon.UpdateIcon(BaseSpell.Icon);
+                _icon.UpdateCooldown(BaseSpell.CooldownTurns, _currentCooldown);
             }
         }
 
@@ -60,14 +34,14 @@ namespace Spells
                 _currentCooldown--;
             
             if (_icon != null)
-                _icon.UpdateCooldown(Spell.CooldownTurns, _currentCooldown);
+                _icon.UpdateCooldown(BaseSpell.CooldownTurns, _currentCooldown);
         }
 
         public bool IsReady(Agent user)
         {
             if (_currentCooldown > 0) return false;
         
-            if (user.CurrentMana < Spell.ManaCost) return false;
+            if (user.CurrentMana < BaseSpell.ManaCost) return false;
         
             return true;
         }
@@ -77,11 +51,11 @@ namespace Spells
             if (!IsReady(user))
                 return;
             
-            Spell.ApplyEffect(user, enemy);
-            _currentCooldown = Spell.CooldownTurns + 1;
+            BaseSpell.ApplyEffect(user, enemy);
+            _currentCooldown = BaseSpell.CooldownTurns + 1;
             
             if (_icon != null)
-                _icon.UpdateCooldown(Spell.CooldownTurns, _currentCooldown);
+                _icon.UpdateCooldown(BaseSpell.CooldownTurns, _currentCooldown);
             
         }
     }

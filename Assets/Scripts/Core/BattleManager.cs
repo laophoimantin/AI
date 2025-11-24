@@ -14,7 +14,7 @@ namespace Core
         [Header("Wizards")]
         [SerializeField] private Agent _redWizard;
         [SerializeField] private Agent _blueWizard;
-        [SerializeField] private List<SpellSO> _spellBook; // assign in inspector
+        [SerializeField] private List<BaseSpellSO> _spellBook; // assign in inspector
 
         [Header("UI References")]
         [SerializeField] private TextMeshProUGUI _roundDisplay;
@@ -43,6 +43,8 @@ namespace Core
                 Debug.LogError("Wizards are not assigned in BattleManager!");
                 return;
             }
+            _redWizard.Initialize(_spellBook);
+            _blueWizard.Initialize(_spellBook);
             StartCoroutine(SimulateBattle());
         }
         

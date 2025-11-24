@@ -3,9 +3,9 @@ using Wizardo;
 
 namespace Spells
 {
-    // Reliable
-    [CreateAssetMenu(menuName = "AI/Spells/Fireball")]
-    public class FireBallSO : BaseSpellSO
+    // Big Button
+    [CreateAssetMenu(menuName = "AI/Spells/DarkBlast")]
+    public class DarkBlastSpellSO : BaseSpellSO
     {
         protected override float EvaluateInternal(Agent user, Agent target)
         {
@@ -16,7 +16,7 @@ namespace Spells
             _spellScore = totalPotentialDamage;
             
             if (damageOnHit >= target.CurrentHealth)
-                _spellScore += 1000f;
+                _spellScore += 100f;
                 
             // Enemy is low health, bonus points
             if (target.CurrentHealth < target.MaxHealth * 0.3f)
@@ -30,7 +30,7 @@ namespace Spells
         protected override void SpellEffect(Agent user, Agent target)
         {
             target.TakeDamage(_power);
-            Debug.Log($"FIREBALL HITS! Dealt {_power}");
+            Debug.Log($"DARK BLAST HITS! Dealt {_power}");
         }
     }
 }

@@ -4,7 +4,7 @@ using Wizardo;
 namespace Spells
 {
     [CreateAssetMenu(menuName = "AI/Spells/Shield")]
-    public class ShieldSO : SpellSO
+    public class ShieldSpellSO : BaseSpellSO
     {
         [Range (0, 1)]
         [SerializeField] private float _reductionPercent  = 0.5f;
@@ -18,28 +18,32 @@ namespace Spells
         //     float baseValue = underThreat * _shieldValue - _manaCost * 0.2f;
         //     return baseValue;
         // } 
-        public override float Evaluate(Agent self, Agent enemy)
+        protected override float EvaluateInternal(Agent user, Agent target)
         {
-            if (self.ShieldValue > 0)
-            {
+            if (!target.IsAlive)
                 return 0;
-            }
+            if (user.CurrentMana < _manaCost) 
+                return 0;
+            
+            
+            if (user.ShieldValue > 0)
+                return 0;
             
             float baseValue = _shieldValue;
             
-            if (self.CurrentHealth < 40)
+            if (user.CurrentHealth < 40)
             {
                 // The AI desperately needs this shield or it will die
                 baseValue *= 2.5f; 
             }
-            else if (self.CurrentHealth < 70)
+            else if (user.CurrentHealth < 70)
             {
                 // If the health is low, a shield would be a good idea
                 baseValue *= 1.5f;
             }
     
             // The enemy has a lot of mana to use a big spell
-            if (enemy.CurrentMana > 40)
+            if (target.CurrentMana > 40)
             {
                 baseValue *= 1.2f;
             }
@@ -51,12 +55,9 @@ namespace Spells
         
         
 
-        public override void ApplyEffect(Agent user, Agent enemy)
+        protected override void SpellEffect(Agent user, Agent target)
         {
-            if (user.CurrentMana < _manaCost) return;
-            user.ModifyMana(-_manaCost);
             user.AddShield(_reductionPercent, _shieldValue, _shieldDuration);
-            
             Debug.Log($"{user.Name} raises a shield");
         }
     }

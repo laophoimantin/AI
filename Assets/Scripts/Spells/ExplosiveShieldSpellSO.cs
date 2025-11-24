@@ -1,7 +1,7 @@
 namespace Spells
 {
     // Tactical Delay
-    public class ExplosiveShieldSO
+    public class ExplosiveShieldSpellSO
     {
         
     }
