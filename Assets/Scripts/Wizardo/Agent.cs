@@ -15,7 +15,6 @@ namespace Wizardo
         public event Action<float, float> OnManaChanged;
         public event Action<string> OnDeath;
 
-
         [Header("AI Personality")] [SerializeField]
         private PersonalitySO _personality;
         public PersonalitySO Personality => _personality;
@@ -56,7 +55,7 @@ namespace Wizardo
         private List<StatusEffect> _statuses = new();
         
         public event Action<StatusEffect> OnStatusApply;
-        public event Action OnStatusExpire;
+        public event Action<StatusEffect> OnStatusRemove;
 
 
 
@@ -83,8 +82,9 @@ namespace Wizardo
             }
         }
 
+        // ========================================================================
         // Main Logic ==================================================================================================
-
+        // ========================================================================
         public void TakeTurn(Agent enemy)
         {
             if (!IsAlive) return;
@@ -284,9 +284,9 @@ namespace Wizardo
         }
 
         // Status ======================================================================================================
-        public bool HasStatus<T>() where T : StatusEffect
+        public bool HasStatus<Type>() where Type : StatusEffect
         {
-            return _statuses.Exists(s => s is T);
+            return _statuses.Exists(s => s is Type);
         }
 
         public void AddStatus(StatusEffect status)
@@ -314,7 +314,7 @@ namespace Wizardo
                 if (status.IsExpired)
                 {
                     _statuses.RemoveAt(i);
-                    OnStatusExpire?.Invoke();
+                    OnStatusRemove?.Invoke(status);
                 }
             }
         }

@@ -10,7 +10,10 @@ namespace Core
     public class BattleManager : MonoBehaviour
     {
         public static BattleManager Instance { get; private set; }
-        
+
+        [Header("Battle Settings")]
+        [SerializeField] private float _turnDuration;
+
         [Header("Wizards")]
         [SerializeField] private Agent _redWizard;
         [SerializeField] private Agent _blueWizard;
@@ -20,20 +23,20 @@ namespace Core
         [SerializeField] private TextMeshProUGUI _roundDisplay;
         [SerializeField] private TextMeshProUGUI _turnArrowText;
         [SerializeField] private TextMeshProUGUI _spellCastText;
-        
+
         private int _currentRound;
 
 
         void Awake()
         {
-            if (Instance != null && Instance != this) 
-            { 
-                Destroy(this); 
-            } 
-            else 
-            { 
-                Instance = this; 
-            } 
+            if (Instance != null && Instance != this)
+            {
+                Destroy(this);
+            }
+            else
+            {
+                Instance = this;
+            }
         }
 
         void Start()
@@ -47,21 +50,21 @@ namespace Core
             _blueWizard.Initialize(_spellBook);
             StartCoroutine(SimulateBattle());
         }
-        
-        
-       
-        
+
+
+
+
         private IEnumerator SimulateBattle()
         {
             bool redTurn = Random.Range(0, 2) == 0;
-        
+
             DisplayCombatMessage("Battle Start!");
-            yield return new WaitForSeconds(1.5f);
-            
+            yield return new WaitForSeconds(_turnDuration / 2);
+
             while (_redWizard.IsAlive && _blueWizard.IsAlive)
             {
                 _roundDisplay.text = $"Round {_currentRound}";
-            
+
                 Agent currentAgent = redTurn ? _redWizard : _blueWizard;
                 Agent targetAgent = redTurn ? _blueWizard : _redWizard;
 
@@ -72,16 +75,16 @@ namespace Core
                 }
 
                 currentAgent.TakeTurn(targetAgent);
- 
-                yield return new WaitForSeconds(1.5f);
+
+                yield return new WaitForSeconds(_turnDuration / 2);
 
                 if (!targetAgent.IsAlive) break;
 
                 redTurn = !redTurn;
-                
+
                 if (redTurn) _currentRound++;
             }
-        
+
             // End Game
             string winner = _redWizard.IsAlive ? _redWizard.Name : _blueWizard.Name;
             DisplayCombatMessage($"GAME OVER! {winner} Wins!");
@@ -93,10 +96,10 @@ namespace Core
             if (_spellCastText != null)
                 _spellCastText.text = message;
         }
-        
-        
-        
-        
+
+
+
+
         // private IEnumerator SimulateBattle()
         // {
         //     bool blueStarts = Random.Range(0, 2) == 0;

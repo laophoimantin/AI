@@ -12,8 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 244b3b9e033b477bb27647d70a32e9ad, type: 3}
   m_Name: Dark Blast
   m_EditorClassIdentifier: 
-  _iconSprite: {fileID: 21300000, guid: e88b107a0c6177d4aaef31c31ec9ca35, type: 3}
   _name: Dark Blast
-  _manaCost: 40
+  _description: 
+  _icon: {fileID: 21300000, guid: e88b107a0c6177d4aaef31c31ec9ca35, type: 3}
+  _manaCost: 45
   _cooldownTurns: 3
-  _damage: 45
+  _power: 40
+  _successRate: 0.854
+  _duration: 0
+  _type: 0

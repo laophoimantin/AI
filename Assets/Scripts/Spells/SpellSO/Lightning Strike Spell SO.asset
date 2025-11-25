@@ -9,15 +9,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fed37a3ea1164fa78825ad3c33cc717b, type: 3}
-  m_Name: Heal Spell
+  m_Script: {fileID: 11500000, guid: a4e400e8e8b24586835ce8054192d38d, type: 3}
+  m_Name: Lightning Strike Spell SO
   m_EditorClassIdentifier: 
-  _name: Heal
+  _name: Lightning Strike
   _description: 
-  _icon: {fileID: 21300000, guid: 76903a204c342b8488f73d2c02a6cea5, type: 3}
+  _icon: {fileID: 21300000, guid: 183c1b8f579faa7449d9c8f092c94df6, type: 3}
   _manaCost: 25
-  _cooldownTurns: 2
-  _power: 0
-  _successRate: 1
+  _cooldownTurns: 4
+  _power: 35
+  _successRate: 0.5
   _duration: 0
   _type: 0

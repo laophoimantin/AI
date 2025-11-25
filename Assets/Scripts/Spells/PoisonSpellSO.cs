@@ -9,7 +9,11 @@ namespace Spells
         protected override float EvaluateInternal(Agent user, Agent target)
         {
             if (target.HasStatus<PoisonedStatus>())
+            {
                 _spellScore = 5f;
+                return Mathf.Max(0, _spellScore);
+            }
+
 
             // TTL "Time To Live"
             float estimatedTTL = target.CurrentHealth / 15f /*avg damage*/;

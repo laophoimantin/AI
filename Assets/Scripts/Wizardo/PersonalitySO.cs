@@ -10,10 +10,10 @@ namespace Wizardo
         public string Description;
         
         [Header("Roleplay Biases")]
-        [Tooltip("Multiplies score of OFFENSE spells.\n> 1.0 = Aggressive (Berserker) \n< 1.0 = Passive")]
+        [Tooltip("How much the wizard values dealing damage. \nMultiplies score of OFFENSE spells.\n> 1.0 = Aggressive (Berserker) \n< 1.0 = Passive")]
         [Range(0f, 1f)] public float Aggression = 1.0f; 
     
-        [Tooltip("Multiplies score of DEFENSE/HEAL spells.\n> 1.0 = Cautious (Coward) \n< 1.0 = Brave")]
+        [Tooltip("How much the wizard values keeping their own HP high. \nMultiplies score of DEFENSE/HEAL spells.\n> 1.0 = Cautious (Coward) \n< 1.0 = Brave")]
         [Range(0f, 1f)] public float Caution = 1.0f;    
 
         [Tooltip("Multiplies score of UTILITY/BUFF spells.\n> 1.0 = Tactical \n< 1.0 = Simple-minded")]

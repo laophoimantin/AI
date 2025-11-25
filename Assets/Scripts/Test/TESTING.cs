@@ -37,18 +37,17 @@ public class WizardState
 // Right-click in Project view -> Create -> WizardAI -> Personality Profile
 // Create different profiles like "Aggressive Fire Mage" or "Cautious Healer"
 
-[CreateAssetMenu(fileName = "NewPersonality", menuName = "WizardAI/Personality Profile")]
 public class AIPersonalitySO : ScriptableObject
 {
     
     [Header("Base Biases (Multipliers)")]
-    [Tooltip("How much they value dealing damage.")]
+    [Tooltip("How much the wizard values dealing damage.")]
     public float aggressionBias = 1.0f; 
 
-    [Tooltip("How much they value keeping their own HP high.")]
+    [Tooltip("How much the wizard values keeping their own HP high.")]
     public float selfPreservationBias = 1.0f;
 
-    [Tooltip("How much they hate spending mana.")]
+    [Tooltip("How much the wizard hates spending mana.")]
     public float manaHoardingBias = 1.0f;
 
     [Header("Human Imperfections")]

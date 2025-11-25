@@ -6,7 +6,6 @@ namespace Spells
     public enum SpellType { Offense, Defense, Utility, Buff, Debuff }
     public enum TargetType { Enemy, Self }
     
-    [CreateAssetMenu(menuName = "AI/Spell")]
     public abstract class BaseSpellSO : ScriptableObject
     {
         [Header("Identity")]
@@ -21,6 +20,9 @@ namespace Spells
         [Header("The Payload")]
         [SerializeField] protected float _power; 
         [Range(0f, 1f)] [SerializeField] protected float _successRate = 1.0f;
+
+        [Header("Buff/Debuff")]
+        [Tooltip("Duration in turns for buffs/debuffs.")]
         [SerializeField] protected int _duration; 
         
         [Header("AI Tags")]

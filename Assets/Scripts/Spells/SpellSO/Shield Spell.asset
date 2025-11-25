@@ -12,10 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b65fa9cb04ce47288ee393d42634c90d, type: 3}
   m_Name: Shield Spell
   m_EditorClassIdentifier: 
-  _iconSprite: {fileID: 21300000, guid: 26f37ea7ea7059e40b52f0ed2d9c0e0e, type: 3}
   _name: Shield
+  _description: 
+  _icon: {fileID: 21300000, guid: 26f37ea7ea7059e40b52f0ed2d9c0e0e, type: 3}
   _manaCost: 20
   _cooldownTurns: 2
+  _power: 0
+  _successRate: 1
+  _duration: 0
+  _type: 1
   _reductionPercent: 0.5
   _shieldValue: 25
   _shieldDuration: 3

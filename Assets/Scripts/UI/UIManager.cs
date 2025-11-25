@@ -25,6 +25,7 @@ namespace GameUI
             _targetAgent.OnManaChanged += UpdateManaBar;
             
             _targetAgent.OnStatusApply += AddStatusIcon;
+            _targetAgent.OnStatusRemove += RemoveStatusIcon;
         }
         
         void OnDestroy() 
@@ -33,6 +34,7 @@ namespace GameUI
             _targetAgent.OnManaChanged -= UpdateManaBar;
             
             _targetAgent.OnStatusApply -= AddStatusIcon;
+            _targetAgent.OnStatusRemove -= RemoveStatusIcon;
         }
         
         
@@ -93,7 +95,7 @@ namespace GameUI
             _iconPool.Add(newIcon);
             return newIcon;
         }
-        
-        
+
+
     }
 }

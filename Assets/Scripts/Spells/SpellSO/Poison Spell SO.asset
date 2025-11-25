@@ -9,15 +9,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fed37a3ea1164fa78825ad3c33cc717b, type: 3}
-  m_Name: Heal Spell
+  m_Script: {fileID: 11500000, guid: cd4a2cef504a489eb884cc91290e0c35, type: 3}
+  m_Name: Poison Spell SO
   m_EditorClassIdentifier: 
-  _name: Heal
+  _name: Poison
   _description: 
-  _icon: {fileID: 21300000, guid: 76903a204c342b8488f73d2c02a6cea5, type: 3}
-  _manaCost: 25
+  _icon: {fileID: 21300000, guid: 199e2047b64a7ee47bd82cd9b90dda7a, type: 3}
+  _manaCost: 20
   _cooldownTurns: 2
-  _power: 0
-  _successRate: 1
-  _duration: 0
-  _type: 0
+  _power: 4.5
+  _successRate: 0.7
+  _duration: 6
+  _type: 4
