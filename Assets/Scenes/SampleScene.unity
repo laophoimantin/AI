@@ -1503,7 +1503,7 @@ MonoBehaviour:
   _wizardName: Blue Wizard
   _maxHealth: 100
   _maxMana: 100
-  _manaRegenRate: 15
+  _manaRegenRate: 8
   _spellInstancePrefab: {fileID: -2654569708702250079, guid: 666dd32a22e046c4c9dc77eaf1701596, type: 3}
   _spellContainer: {fileID: 1377555677}
   LastTurnData: []
@@ -2914,7 +2914,7 @@ MonoBehaviour:
   _wizardName: Red Wizard
   _maxHealth: 100
   _maxMana: 100
-  _manaRegenRate: 15
+  _manaRegenRate: 8
   _spellInstancePrefab: {fileID: -2654569708702250079, guid: 666dd32a22e046c4c9dc77eaf1701596, type: 3}
   _spellContainer: {fileID: 1395693753}
   LastTurnData: []
