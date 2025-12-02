@@ -124,7 +124,7 @@ namespace Wizardo
             if (_debugAI)
             {
                 debugLog = new StringBuilder();
-                debugLog.AppendLine($"--- BRAIN DUMP: {_wizardName} ---");
+                debugLog.AppendLine($"--- Agent: {_wizardName} ---");
                 debugLog.AppendLine($"HP: {_currentHealth}/{_maxHealth} | Mana: {_currentMana}");
                 debugLog.AppendLine($"Personality: {(_personality != null ? _personality.name : "None")}");
                 debugLog.AppendLine("----------------------------------------------------------------");

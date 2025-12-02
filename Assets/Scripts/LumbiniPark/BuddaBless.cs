@@ -6,7 +6,6 @@ namespace LumbiniPark
     {
         void Start()
         {
-            BuddaBlessing();
         }
 
         void Update()

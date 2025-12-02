@@ -8,17 +8,16 @@ public class AgentEditor : Editor
 {
     public override void OnInspectorGUI()
     {
-        // Draw the default stuff (health, mana, etc.) so you don't break everything
         DrawDefaultInspector();
 
         Agent wizard = (Agent)target;
 
         GUILayout.Space(20);
-        EditorGUILayout.LabelField($"🧠 Brain Dump: {wizard.name}", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField($"Agent: {wizard.name}", EditorStyles.boldLabel);
 
         if (wizard.LastTurnData == null || wizard.LastTurnData.Count == 0)
         {
-            EditorGUILayout.HelpBox("No brain activity detected.", MessageType.Info);
+            EditorGUILayout.HelpBox("No agent activity detected.", MessageType.Info);
             return;
         }
 
@@ -33,13 +32,10 @@ public class AgentEditor : Editor
         GUILayout.Space(5);
         // -------------------
 
-        // Find the highest score in the list to normalize the bars
-        // If the highest score is 50, a score of 25 will fill half the bar.
         float maxScoreInList = 1f;
         if (wizard.LastTurnData.Count > 0)
         {
             maxScoreInList = wizard.LastTurnData.Max(x => x.FinalScore);
-            // Prevent divide by zero if your AI is totally broken and returns 0s
             if (maxScoreInList <= 0) maxScoreInList = 1f;
         }
 
@@ -50,7 +46,7 @@ public class AgentEditor : Editor
         GUILayout.Label("Pers", GUILayout.Width(40));
         GUILayout.Label("Noise", GUILayout.Width(40));
         //GUILayout.Label("Final Score", GUILayout.ExpandWidth(true));
-        GUILayout.Label("Final Score", GUILayout.Width(40));
+        GUILayout.Label("Final Score", GUILayout.Width(100));
         GUILayout.Label("%", GUILayout.Width(40));
         EditorGUILayout.EndHorizontal();
 
@@ -79,13 +75,12 @@ public class AgentEditor : Editor
         EditorGUILayout.LabelField(data.PersonalityMod.ToString("0.0"), GUILayout.Width(40));
         EditorGUILayout.LabelField(data.Noise.ToString("0.00"), GUILayout.Width(40));
 
-        // // DYNAMIC BAR
         // Rect r = EditorGUILayout.GetControlRect(GUILayout.ExpandWidth(true));
         // // Calculate fill relative to the highest score in the list
         // float barValue = data.FinalScore / maxScoreContext;
         // EditorGUI.ProgressBar(r, barValue, data.FinalScore.ToString("0.0"));
 
-        EditorGUILayout.LabelField(data.FinalScore.ToString("0.00"), GUILayout.Width(40));
+        EditorGUILayout.LabelField(data.FinalScore.ToString("0.00"), GUILayout.Width(100));
         EditorGUILayout.LabelField((data.WinChance * 100).ToString("0") + "%", GUILayout.Width(40));
 
         EditorGUILayout.EndHorizontal();
