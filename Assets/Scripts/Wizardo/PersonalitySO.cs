@@ -1,3 +1,4 @@
+using Spells;
 using UnityEngine;
 
 namespace Wizardo
@@ -25,5 +26,19 @@ namespace Wizardo
         [Header("Human Flaws")]
         [Tooltip("Affects the final spell selection.\n0.0 = Perfect Robot \n0.2 = Smart Human \n0.5 = Drunk Wizard \n>0.5 = Da GREATEST GAMBLER IN THE WIZARDING WORLD!")]
         [Range(0f, 1f)]  public float Randomness = 0.2f; 
+        
+        public float GetModifierForType(SpellType type)
+        {
+            switch (type)
+            {
+                case SpellType.Offense: 
+                    return Aggression;
+                case SpellType.Defense: 
+                    return Caution;
+                case SpellType.Utility: 
+                    return Utility;
+                default: return 1.0f;
+            }
+        }
     }
 }

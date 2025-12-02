@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Wizardo;
+using StatusEffects;
 
 namespace GameUI
 {

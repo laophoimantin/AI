@@ -4,10 +4,24 @@ using System.Linq;
 using Core;
 using Spells;
 using UnityEngine;
-using UnityEngine.Serialization;
+using StatusEffects;
+using System.Text;
 
 namespace Wizardo
 {
+    [System.Serializable]
+    public class SpellDecisionDebug
+    {
+        public string SpellName;
+        public float RawScore;
+        public float PersonalityMod;
+        public float Noise;
+        public float FinalScore;
+        public float WinChance;
+        public bool IsWinner;
+    }
+
+
     public class Agent : MonoBehaviour
     {
         // --- EVENTS ---
@@ -15,13 +29,17 @@ namespace Wizardo
         public event Action<float, float> OnManaChanged;
         public event Action<string> OnDeath;
 
-        [Header("AI Personality")] [SerializeField]
+        [Tooltip("TOGGLE THIS to see the logs")]
+        [SerializeField] private bool _debugAI = true;
+
+        [Header("AI Personality")]
+        [SerializeField]
         private PersonalitySO _personality;
+
         public PersonalitySO Personality => _personality;
 
-        [Header("Wizard Stats")] [SerializeField]
-        private string _wizardName;
-
+        [Header("Wizard Stats")]
+        [SerializeField] private string _wizardName;
         [SerializeField] private float _maxHealth;
         [SerializeField] private float _maxMana = 30f;
         [SerializeField] private float _manaRegenRate = 2f;
@@ -29,9 +47,6 @@ namespace Wizardo
         // --- STATE ---
         private float _currentHealth;
         private float _currentMana;
-        private float _reductionPercent;
-        private float _shieldValue;
-        private int _shieldDuration;
 
 
         // Getters
@@ -40,24 +55,35 @@ namespace Wizardo
         public float MaxHealth => _maxHealth;
         public float CurrentMana => _currentMana;
         public bool IsAlive => _currentHealth > 0;
-        public float ReductionPercent => _reductionPercent;
-        public int ShieldDuration => _shieldDuration;
-        public float ShieldValue => _shieldValue;
 
 
-        [Header("Spells")] [SerializeField] private SpellInstance _spellInstancePrefab;
+        [Header("Spells")]
+        [SerializeField] private SpellInstance _spellInstancePrefab;
         [SerializeField] private Transform _spellContainer;
         private readonly List<SpellInstance> _spellBook = new();
         private SpellInstance _currentSpell;
 
 
-        [Header("Status Effects")] [SerializeField]
-        private List<StatusEffect> _statuses = new();
-        
+        [Header("Status Effects")]
+        private readonly List<StatusEffect> _statuses = new();
+
+        private BaseShieldStatus _currentBaseShield;
+        public bool HasShield => _currentBaseShield is { Durability: > 0 };
+
+
         public event Action<StatusEffect> OnStatusApply;
         public event Action<StatusEffect> OnStatusRemove;
 
 
+        // Debug
+        [HideInInspector] public List<SpellDecisionDebug> LastTurnData = new List<SpellDecisionDebug>();
+        [HideInInspector] public float LastTotalWeight;
+        [HideInInspector] public float LastWinningTicket;
+
+        void OnDisable()
+        {
+            BattleManager.Instance.OnTurnChanged -= HandleTurnChanged;
+        }
 
         void Start()
         {
@@ -80,91 +106,182 @@ namespace Wizardo
                 instance.Init(spell);
                 _spellBook.Add(instance);
             }
+
+            BattleManager.Instance.OnTurnChanged += HandleTurnChanged;
         }
 
-        // ========================================================================
+
+        // =============================================================================================================
         // Main Logic ==================================================================================================
-        // ========================================================================
+        // =============================================================================================================
         public void TakeTurn(Agent enemy)
         {
             if (!IsAlive) return;
 
-            RegenMana(_manaRegenRate);
-            DecayShield();
-            ReduceSpellCooldowns();
+            ProcessEffects(true);
 
-            Dictionary<SpellInstance, float> spellChances = new Dictionary<SpellInstance, float>();
-            float totalWeight = 0f;
+            StringBuilder debugLog = null;
+            if (_debugAI)
+            {
+                debugLog = new StringBuilder();
+                debugLog.AppendLine($"--- BRAIN DUMP: {_wizardName} ---");
+                debugLog.AppendLine($"HP: {_currentHealth}/{_maxHealth} | Mana: {_currentMana}");
+                debugLog.AppendLine($"Personality: {(_personality != null ? _personality.name : "None")}");
+                debugLog.AppendLine("----------------------------------------------------------------");
+                debugLog.AppendLine($"{"SPELL",-40} | {"RAW",-5} | {"PERS",-5} | {"NOISE",-5} | {"FINAL",-5}");
+            }
+
+            LastTurnData.Clear();
+
+            // Phase 1: Evaluation
+            var spellScores = EvaluateAvailableSpells(enemy, debugLog);
+
+            // Phase 2: Decision
+            SpellInstance chosenSpell = SelectSpellWeighted(spellScores, debugLog);
+
+            if (_debugAI && debugLog != null)
+            {
+                Debug.Log(debugLog.ToString());
+            }
+
+            // Phase 3: Action
+            TryCastSelectedSpellOn(chosenSpell, enemy);
+            ProcessEffects(false);
+        }
+
+        private Dictionary<SpellInstance, float> EvaluateAvailableSpells(Agent enemy, StringBuilder log)
+        {
+            var scoreDict = new Dictionary<SpellInstance, float>();
+
             foreach (var spellInstance in _spellBook)
             {
                 if (!spellInstance.IsReady(this)) continue;
 
                 float rawScore = spellInstance.BaseSpell.Evaluate(this, enemy);
-
                 if (rawScore <= 0) continue;
 
+                float finalScore = rawScore;
                 float personalityMod = 1.0f;
-                if (_personality != null)
-                {
-                    switch (spellInstance.BaseSpell.Type)
-                    {
-                        case SpellType.Offense:
-                            personalityMod = _personality.Aggression;
-                            break;
-                        case SpellType.Defense:
-                            personalityMod = _personality.Caution;
-                            break;
-                        case SpellType.Utility:
-                            personalityMod = _personality.Utility;
-                            break;
-                    }
-                }
-
-                float finalScore = rawScore * personalityMod;
+                float noise = 1.0f;
 
                 if (_personality != null)
                 {
-                    float noise =
-                        UnityEngine.Random.Range(1.0f - _personality.Randomness, 1.0f + _personality.Randomness);
+                    personalityMod = _personality.GetModifierForType(spellInstance.BaseSpell.Type);
+                    finalScore *= personalityMod;
+
+                    noise = UnityEngine.Random.Range(1.0f - _personality.Randomness, 1.0f + _personality.Randomness);
                     finalScore *= noise;
                 }
 
-                spellChances.Add(spellInstance, finalScore);
-                totalWeight += finalScore;
+                scoreDict.Add(spellInstance, finalScore);
+                if (log != null)
+                {
+                    log.AppendLine($"{spellInstance.BaseSpell.Name,-40} | {rawScore,-5:F0} | {personalityMod,-5:F1} | {noise,-5:F2} | {finalScore,-5:F0}");
+                }
+
+
+                LastTurnData.Add(new SpellDecisionDebug
+                {
+                    SpellName = spellInstance.BaseSpell.Name,
+                    RawScore = rawScore,
+                    PersonalityMod = personalityMod,
+                    Noise = noise,
+                    FinalScore = finalScore,
+                    IsWinner = false
+                });
             }
 
-            // Decision Phase (Weighted Random)
-            SpellInstance selectedSpell = null;
 
-            if (spellChances.Count > 0)
+            return scoreDict;
+        }
+
+        private SpellInstance SelectSpellWeighted(Dictionary<SpellInstance, float> spellScores, StringBuilder log)
+        {
+            if (spellScores.Count == 0) return null;
+
+            float totalScore = spellScores.Sum(x => x.Value);
+            float randomValue = UnityEngine.Random.Range(0, totalScore);
+
+            if (log != null)
             {
-                float randomPick = UnityEngine.Random.Range(0, totalWeight);
-                float currentSum = 0;
+                log.AppendLine("----------------------------------------------------------------");
+                log.AppendLine($"Total Weight: {totalScore:F1} | Winning Ticket: {randomValue:F1}");
+                log.AppendLine("--- PROBABILITY BREAKDOWN ---");
+            }
 
-                foreach (var pair in spellChances)
+            // SAVE DATA FOR EDITOR
+            LastTotalWeight = totalScore; // <--- Capture
+            LastWinningTicket = randomValue; // <--- Capture
+
+            SpellInstance selected = null;
+            float currentSum = 0;
+            bool found = false;
+
+            // DEBUG ===============================
+            foreach (var pair in spellScores)
+            {
+                if (log != null)
+                {
+                    float percent = (pair.Value / totalScore) * 100f;
+                    // Check if this is the winner to mark it in the log
+                    bool isThisTheWinner = !found && (currentSum + pair.Value >= randomValue);
+                    string winnerMarker = isThisTheWinner ? "<< WON" : "";
+                    log.AppendLine($"{pair.Key.BaseSpell.Name,-40}: {percent:F1}% {winnerMarker}");
+                }
+
+                if (!found)
                 {
                     currentSum += pair.Value;
-                    if (currentSum >= randomPick)
+                    if (currentSum >= randomValue)
                     {
-                        selectedSpell = pair.Key;
-                        break;
+                        selected = pair.Key;
+                        found = true;
                     }
-                }
-
-                // Fallback: If math failed due to float errors, pick the highest score
-                if (selectedSpell == null)
-                {
-                    selectedSpell = spellChances.OrderByDescending(x => x.Value).First().Key;
                 }
             }
 
-            // Action Phase
-            _currentSpell = selectedSpell;
-
-            if (_currentSpell != null)
+            foreach (var pair in spellScores)
             {
-                // Note: Ensure ExecuteSpell calls SpellSO.Cast internally
-                _currentSpell.ExecuteSpell(this, enemy);
+                var debugEntry = LastTurnData.FirstOrDefault(x => x.SpellName == pair.Key.BaseSpell.Name);
+
+                if (debugEntry != null)
+                {
+                    // Calculate percentage for the UI
+                    debugEntry.WinChance = (pair.Value / totalScore);
+                }
+
+                if (!found)
+                {
+                    currentSum += pair.Value;
+                    if (currentSum >= randomValue)
+                    {
+                        selected = pair.Key;
+                        found = true;
+
+                        // MARK THE WINNER
+                        if (debugEntry != null) debugEntry.IsWinner = true;
+                    }
+                }
+            }
+            //Debugggggggggggggggggggggggggggggggggggggg
+
+
+            // Fallback: Return the highest score (handles potential float precision edge cases)
+            if (selected == null)
+            {
+                selected = spellScores.OrderByDescending(x => x.Value).First().Key;
+                if (log != null) log.AppendLine("!! FALLBACK TRIGGERED !!");
+            }
+
+            return selected;
+        }
+
+        private void TryCastSelectedSpellOn(SpellInstance spell, Agent target)
+        {
+            _currentSpell = spell;
+            if (spell != null)
+            {
+                spell.ExecuteSpell(this, target);
                 BattleManager.Instance.DisplayCombatMessage($"{Name} casts {_currentSpell.BaseSpell.Name}");
             }
             else
@@ -172,72 +289,40 @@ namespace Wizardo
                 Debug.Log($"{_wizardName} has no valid spell to cast.");
                 BattleManager.Instance.DisplayCombatMessage($"{Name} skips turn (No valid spells).");
             }
-
-            ProcessStatuses();
         }
 
 
-        
-        
-        
-        
-        
-        
-        // Method ======================================================================================================
+        // Methods ======================================================================================================
+        private void HandleTurnChanged()
+        {
+            RegenMana(_manaRegenRate);
+            ReduceSpellCooldowns();
+        }
+
         private void ReduceSpellCooldowns()
         {
             foreach (var spell in _spellBook)
                 spell.ReduceCooldown();
         }
 
-        private void DecayShield()
-        {
-            if (_shieldDuration > 0)
-            {
-                _shieldDuration--;
-                if (_shieldDuration <= 0)
-                {
-                    _shieldValue = 0f;
-                    _reductionPercent = 0f;
-                    BattleManager.Instance.DisplayCombatMessage($"{Name}'s shield faded.");
-                }
-            }
-        }
-
-        public void AddShield(float reductionPercent, float shieldAmount, int duration)
-        {
-            _reductionPercent = Mathf.Clamp01(reductionPercent);
-            _shieldValue = shieldAmount;
-            _shieldDuration = duration;
-        }
+        #region Health and Mana
 
         // Health ======
+        public float EstimateIncomingDamage(float damage)
+        {
+            if (!HasShield) return damage;
+            return _currentBaseShield.ModifyDamage(damage);
+        }
+
         public void TakeDamage(float incomingDamage, bool isShieldIgnored = false)
         {
             if (!IsAlive) return;
 
             float finalDamage = incomingDamage;
 
-            if (!isShieldIgnored)
+            if (!isShieldIgnored && HasShield)
             {
-                if (_shieldValue > 0)
-                {
-                    finalDamage *= (1.0f - _reductionPercent);
-                }
-
-                if (_shieldValue > 0)
-                {
-                    if (_shieldValue >= finalDamage)
-                    {
-                        _shieldValue -= finalDamage;
-                        finalDamage = 0;
-                    }
-                    else
-                    {
-                        finalDamage -= _shieldValue;
-                        _shieldValue = 0;
-                    }
-                }
+                finalDamage = _currentBaseShield.AbsorbDamage(finalDamage, this);
             }
 
             if (finalDamage > 0)
@@ -251,9 +336,6 @@ namespace Wizardo
             ModifyHealth(amount);
         }
 
-        
-        
-        
         private void ModifyHealth(float amount)
         {
             _currentHealth = Mathf.Clamp(_currentHealth + amount, 0, _maxHealth);
@@ -264,8 +346,7 @@ namespace Wizardo
                 OnDeath?.Invoke(_wizardName);
             }
         }
-        
-        
+
         // Mana ======
         public void ReduceMana(float amount)
         {
@@ -283,10 +364,20 @@ namespace Wizardo
             OnManaChanged?.Invoke(_currentMana, _maxMana);
         }
 
+        #endregion
+
         // Status ======================================================================================================
-        public bool HasStatus<Type>() where Type : StatusEffect
+        public bool HasStatus<T>() where T : StatusEffect
         {
-            return _statuses.Exists(s => s is Type);
+            return GetStatus<T>() != null;
+        }
+
+        public T GetStatus<T>() where T : StatusEffect
+        {
+            foreach (var status in _statuses)
+                if (status is T foundStatus)
+                    return foundStatus;
+            return null;
         }
 
         public void AddStatus(StatusEffect status)
@@ -300,179 +391,206 @@ namespace Wizardo
             else
             {
                 _statuses.Add(status);
+                status.OnApply(this);
                 OnStatusApply?.Invoke(status);
             }
+
+            if (status is BaseShieldStatus shieldStatus)
+            {
+                _currentBaseShield = shieldStatus;
+            }
         }
-        
-        public void ProcessStatuses()
+
+
+        private void ProcessEffects(bool isStartOfTurn)
         {
             for (int i = _statuses.Count - 1; i >= 0; i--)
             {
                 var status = _statuses[i];
-                status.Apply(this);
-                status.ReduceDuration();
+
+                if (isStartOfTurn)
+                {
+                    status.OnTurnStart(this);
+                }
+                else
+                {
+                    status.OnTurnEnd(this);
+                    status.ReduceDuration();
+                }
+
                 if (status.IsExpired)
                 {
-                    _statuses.RemoveAt(i);
-                    OnStatusRemove?.Invoke(status);
+                    RemoveStatus(status, i);
                 }
             }
         }
-        
-        // public bool HasStatus(StatusType type)
-        // {
-        //     return _statuses.Exists(status => status.Type == type);
-        // }
 
-        // public void AddStatus(StatusType type, int duration, float power)
-        // {
-        //     var existing = _statuses.Find(status => status.Type == type);
-        //
-        //     if (existing != null)
-        //     {
-        //         existing.Duration = duration;
-        //         existing.Power = power;
-        //     }
-        //     else
-        //     {
-        //         _statuses.Add(new StatusEffect { Type = type, Duration = duration, Power = power });
-        //         
-        //     }
-        // }
+        private void RemoveStatus(StatusEffect status, int index)
+        {
+            status.OnExpire(this);
+            _statuses.RemoveAt(index);
 
+            if (status is BaseShieldStatus)
+            {
+                _currentBaseShield = null;
+            }
 
-        // public void TakeTurn(Agent enemy)
-        // {
-        //     if (!IsAlive) return;
-        //     
-        //     ModifyMana(_manaRegenRate);
-        //     DecayShield();
-        //     ReduceCooldown();
-        //     
-        //     SpellInstance bestSpell = null;
-        //     float bestValue = float.MinValue;
-        //
-        //     foreach (var spell in _spellBook)
-        //     {
-        //         if (!spell.IsReady(this)) continue;
-        //
-        //         float value = spell.Spell.Evaluate(this, enemy);
-        //         if (value > bestValue)
-        //         {
-        //             bestValue = value;
-        //             bestSpell = spell;
-        //         }
-        //     }
-        //
-        //     _currentSpell = bestSpell;
-        //     
-        //     
-        //     if (_currentSpell != null)
-        //     {
-        //         _currentSpell.ExecuteSpell(this, enemy);
-        //         BattleManager.Instance.DisplayCombatMessage($"{Name} casts {_currentSpell.Spell.Name}");
-        //     }
-        //     else
-        //     {
-        //         Debug.Log($"{_wizardName} has no valid spell to cast.");
-        //         BattleManager.Instance.DisplayCombatMessage($"{Name} skips turn (No valid spells).");
-        //     }
-        // }
-        // public void TakeTurn(Agent enemy)
-        // {
-        //     SpellSO bestSpellSo = null;
-        //     float bestUtility = float.NegativeInfinity;
-        //
-        //     foreach (var spell in _spells)
-        //     {
-        //         if (_currentMana < spell.ManaCost) continue;
-        //         
-        //         float utility = spell.Evaluate(this, enemy);
-        //         if (utility > bestUtility)
-        //         {
-        //             bestUtility = utility;
-        //             bestSpellSo = spell;
-        //         }
-        //     }
-        //     
-        //     if (bestSpellSo == null)
-        //     {
-        //         Debug.LogWarning($"{name} cannot cast any spell (mana: {_currentMana})");
-        //         _currentMana = Mathf.Min(_maxMana, _currentMana + _manaRegenRate);
-        //         return;
-        //     }
-        //
-        //     _currentSpellSo = bestSpellSo;
-        //     _currentSpellSo?.Cast(this, enemy);
-        //     
-        //     _currentMana = Mathf.Min(_maxMana, _currentMana + _manaRegenRate);
-        // }
-        // private void DrawLabel(Vector2 screenPoint, string text, float yOffset)
-        // {
-        //     var style = GUI.skin.label;
-        //
-        //     var content = new GUIContent(text);
-        //     var size = style.CalcSize(content);
-        //
-        //     float x = screenPoint.x - (size.x / 2f);
-        //
-        //     float y = Screen.height - screenPoint.y - size.y - yOffset;
-        //
-        //     GUI.Label(new Rect(x, y, size.x, size.y), text);
-        // }
-        //
-        // public void OnGUI()
-        // {
-        //     float LINESPACING = 20f;
-        //     
-        //     if (!Camera.main) return;
-        //     var worldPoint = transform.position + Vector3.up * 5f;
-        //     Vector2 p = Camera.main.WorldToScreenPoint(worldPoint);
-        //
-        //     float lineIndex = 0;
-        //
-        //     DrawLabel(p, _wizardName, lineIndex * LINESPACING);
-        //     lineIndex++;
-        //
-        //     DrawLabel(p, $"Health: {_health}", lineIndex * LINESPACING);
-        //     lineIndex++;
-        //
-        //     DrawLabel(p, $"Mana: {_currentMana}", lineIndex * LINESPACING);
-        //     lineIndex++;
-        //
-        //     string currentSpellLabel = _currentSpell != null
-        //         ? $"Current Spell: {_currentSpell.GetSpellName}"
-        //         : $"No Spell";
-        //
-        //     DrawLabel(p, currentSpellLabel, lineIndex * LINESPACING);
-        // }
+            OnStatusRemove?.Invoke(status);
+        }
     }
-    
-    /*
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                      _ooOoo_
-                     o8888888o
-                     88" . "88
-                     (| -_- |)
-                     O\  =  /O
-                  ____/`---'\____
-                .'  \\|     |//  `.
-               /  \\|||  :  |||//  \
-              /  _||||| -:- |||||-  \
-              |   | \\\  -  /// |   |
-              | \_|  ''\---/''  |   |
-              \  .-\__  `-`  ___/-. /
-            ___`. .'  /--.--\  `. . __
-         ."" '<  `.___\_<|>_/___.'  >'"".
-        | | :  `- \`.;`\ _ /`;.`/ - ` : | |
-        \  \ `-.   \_ __\ /__ _/   .-` /  /
-    ======`-.____`-.___\_____/___.-`____.-'======
-                      `=---='
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-              佛祖保佑           永无BUG
-             God Bless        Never Crash
-           Phật phù hộ, không bao giờ BUG
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-*/
-
 }
+
+// public bool HasStatus(StatusType type)
+// {
+//     return _statuses.Exists(status => status.Type == type);
+// }
+
+// public void AddStatus(StatusType type, int duration, float power)
+// {
+//     var existing = _statuses.Find(status => status.Type == type);
+//
+//     if (existing != null)
+//     {
+//         existing.Duration = duration;
+//         existing.Power = power;
+//     }
+//     else
+//     {
+//         _statuses.Add(new StatusEffect { Type = type, Duration = duration, Power = power });
+//         
+//     }
+// }
+
+
+// public void TakeTurn(Agent enemy)
+// {
+//     if (!IsAlive) return;
+//     
+//     ModifyMana(_manaRegenRate);
+//     DecayShield();
+//     ReduceCooldown();
+//     
+//     SpellInstance bestSpell = null;
+//     float bestValue = float.MinValue;
+//
+//     foreach (var spell in _spellBook)
+//     {
+//         if (!spell.IsReady(this)) continue;
+//
+//         float value = spell.Spell.Evaluate(this, enemy);
+//         if (value > bestValue)
+//         {
+//             bestValue = value;
+//             bestSpell = spell;
+//         }
+//     }
+//
+//     _currentSpell = bestSpell;
+//     
+//     
+//     if (_currentSpell != null)
+//     {
+//         _currentSpell.ExecuteSpell(this, enemy);
+//         BattleManager.Instance.DisplayCombatMessage($"{Name} casts {_currentSpell.Spell.Name}");
+//     }
+//     else
+//     {
+//         Debug.Log($"{_wizardName} has no valid spell to cast.");
+//         BattleManager.Instance.DisplayCombatMessage($"{Name} skips turn (No valid spells).");
+//     }
+// }
+// public void TakeTurn(Agent enemy)
+// {
+//     SpellSO bestSpellSo = null;
+//     float bestUtility = float.NegativeInfinity;
+//
+//     foreach (var spell in _spells)
+//     {
+//         if (_currentMana < spell.ManaCost) continue;
+//         
+//         float utility = spell.Evaluate(this, enemy);
+//         if (utility > bestUtility)
+//         {
+//             bestUtility = utility;
+//             bestSpellSo = spell;
+//         }
+//     }
+//     
+//     if (bestSpellSo == null)
+//     {
+//         Debug.LogWarning($"{name} cannot cast any spell (mana: {_currentMana})");
+//         _currentMana = Mathf.Min(_maxMana, _currentMana + _manaRegenRate);
+//         return;
+//     }
+//
+//     _currentSpellSo = bestSpellSo;
+//     _currentSpellSo?.Cast(this, enemy);
+//     
+//     _currentMana = Mathf.Min(_maxMana, _currentMana + _manaRegenRate);
+// }
+// private void DrawLabel(Vector2 screenPoint, string text, float yOffset)
+// {
+//     var style = GUI.skin.label;
+//
+//     var content = new GUIContent(text);
+//     var size = style.CalcSize(content);
+//
+//     float x = screenPoint.x - (size.x / 2f);
+//
+//     float y = Screen.height - screenPoint.y - size.y - yOffset;
+//
+//     GUI.Label(new Rect(x, y, size.x, size.y), text);
+// }
+//
+// public void OnGUI()
+// {
+//     float LINESPACING = 20f;
+//     
+//     if (!Camera.main) return;
+//     var worldPoint = transform.position + Vector3.up * 5f;
+//     Vector2 p = Camera.main.WorldToScreenPoint(worldPoint);
+//
+//     float lineIndex = 0;
+//
+//     DrawLabel(p, _wizardName, lineIndex * LINESPACING);
+//     lineIndex++;
+//
+//     DrawLabel(p, $"Health: {_health}", lineIndex * LINESPACING);
+//     lineIndex++;
+//
+//     DrawLabel(p, $"Mana: {_currentMana}", lineIndex * LINESPACING);
+//     lineIndex++;
+//
+//     string currentSpellLabel = _currentSpell != null
+//         ? $"Current Spell: {_currentSpell.GetSpellName}"
+//         : $"No Spell";
+//
+//     DrawLabel(p, currentSpellLabel, lineIndex * LINESPACING);
+// }
+
+/*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                  _ooOoo_
+                 o8888888o
+                 88" . "88
+                 (| -_- |)
+                 O\  =  /O
+              ____/`---'\____
+            .'  \\|     |//  `.
+           /  \\|||  :  |||//  \
+          /  _||||| -:- |||||-  \
+          |   | \\\  -  /// |   |
+          | \_|  ''\---/''  |   |
+          \  .-\__  `-`  ___/-. /
+        ___`. .'  /--.--\  `. . __
+     ."" '<  `.___\_<|>_/___.'  >'"".
+    | | :  `- \`.;`\ _ /`;.`/ - ` : | |
+    \  \ `-.   \_ __\ /__ _/   .-` /  /
+======`-.____`-.___\_____/___.-`____.-'======
+                  `=---='
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          佛祖保佑           永无BUG
+         God Bless        Never Crash
+       Phật phù hộ, không bao giờ BUG
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+*/

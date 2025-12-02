@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Gambler
   Description: 
-  Aggression: 1
+  Aggression: 0.219
   Caution: 1
   Utility: 1
-  RiskTaking: 1
-  Randomness: 1
+  RiskTaking: 0.142
+  Randomness: 0.226

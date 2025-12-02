@@ -17,7 +17,7 @@ namespace Spells
         public void Init(BaseSpellSO baseSpell)
         {
             BaseSpell = baseSpell;
-            _currentCooldown = 0;
+            _currentCooldown = 0;       
             
             gameObject.name = $"Instance_{BaseSpell.Name}";
             

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Spells;
@@ -10,6 +11,8 @@ namespace Core
     public class BattleManager : MonoBehaviour
     {
         public static BattleManager Instance { get; private set; }
+        
+        public event Action OnTurnChanged;
 
         [Header("Battle Settings")]
         [SerializeField] private float _turnDuration;
@@ -56,14 +59,16 @@ namespace Core
 
         private IEnumerator SimulateBattle()
         {
-            bool redTurn = Random.Range(0, 2) == 0;
+            bool redTurn = UnityEngine.Random.Range(0, 2) == 0;
 
             DisplayCombatMessage("Battle Start!");
             yield return new WaitForSeconds(_turnDuration / 2);
 
             while (_redWizard.IsAlive && _blueWizard.IsAlive)
             {
+                OnTurnChanged?.Invoke();
                 _roundDisplay.text = $"Round {_currentRound}";
+                Debug.LogWarning("New Turn!!!");
 
                 Agent currentAgent = redTurn ? _redWizard : _blueWizard;
                 Agent targetAgent = redTurn ? _blueWizard : _redWizard;
@@ -103,10 +108,10 @@ namespace Core
         // private IEnumerator SimulateBattle()
         // {
         //     bool blueStarts = Random.Range(0, 2) == 0;
-        //     Agent currentAgent = blueStarts ? _blueWizard : _redWizard;
-        //     Agent target   = blueStarts ? _redWizard : _blueWizard;
+        //     Agent currentAgent = blueStarts? _blueWizard: _redWizard;
+        //     Agent target = blueStarts? _redWizard: _blueWizard;
         //     _turnArrowText.text = currentAgent == _redWizard ? "<=====" : "=====>";
-        //     _turnArrowText.color = currentAgent == _redWizard? Color.red : Color.blue;
+        //     _turnArrowText.color = currentAgent == _redWizard? Color.red: Color.blue;
         //     
         //     yield return new WaitForSeconds(1.5f);
         //     Debug.Log("Battle started!");
@@ -115,7 +120,7 @@ namespace Core
         //     while (_redWizard.IsAlive && _blueWizard.IsAlive)
         //     {
         //         _turnArrowText.text = currentAgent == _redWizard ? "<=====" : "=====>";
-        //         _turnArrowText.color = currentAgent == _redWizard? Color.red : Color.blue;
+        //         _turnArrowText.color = currentAgent == _redWizard? Color.red: Color.blue;
         //         
         //         yield return new WaitForSeconds(2f);
         //         
@@ -128,7 +133,7 @@ namespace Core
         //         (currentAgent, target) = (target, currentAgent);
         //     }
         //     
-        //     Debug.Log($"Winner: {(_redWizard.IsAlive ? _redWizard.name : _blueWizard.name)}");
+        //     Debug.Log($"Winner: {(_redWizard.IsAlive ? _redWizard.name: _blueWizard.name)}");
         // }
     }
 }

@@ -17,7 +17,7 @@ MonoBehaviour:
   _icon: {fileID: 21300000, guid: e88b107a0c6177d4aaef31c31ec9ca35, type: 3}
   _manaCost: 45
   _cooldownTurns: 3
-  _power: 40
-  _successRate: 0.854
+  _power: 30
+  _successRate: 0.299
   _duration: 0
   _type: 0

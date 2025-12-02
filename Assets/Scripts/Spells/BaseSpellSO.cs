@@ -86,7 +86,5 @@ namespace Spells
                 return 1.0f;
             return Mathf.Lerp(_successRate, 1.0f, user.Personality.RiskTaking);
         }
-
-        
     }
 }
