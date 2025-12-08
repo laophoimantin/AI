@@ -14,7 +14,6 @@ namespace LumbiniPark
 
         void BuddaBlessing()
         {
-            Debug.Log("Budda Blessing Activated!");
             //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             //                   _ooOoo_
             //                  o8888888o

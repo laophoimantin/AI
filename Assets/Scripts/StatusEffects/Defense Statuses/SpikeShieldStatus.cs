@@ -5,14 +5,14 @@ namespace StatusEffects
 {
     public class SpikeShieldStatus : BaseShieldStatus
     {
-        public SpikeShieldStatus(int duration, float power, Sprite icon, float reductionPercent, float durability) : base(duration, power, icon, reductionPercent, durability)
+        public SpikeShieldStatus(Agent user, int duration, float power, Sprite icon, float reductionPercent, float durability) : base(user,  duration, power, icon, reductionPercent, durability)
         {
         }
 
-        public override float AbsorbDamage(float incomingDamage, Agent target)
+        public override float AbsorbDamage(Agent attacker, float incomingDamage)
         {
-            target.TakeDamage(Power, true);
-            return base.AbsorbDamage(incomingDamage, target);
+            attacker.TakeDamage(User, Power, true);
+            return base.AbsorbDamage(attacker, incomingDamage);
         }
     }
 }

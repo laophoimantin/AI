@@ -5,21 +5,22 @@ namespace StatusEffects
 {
     public class PoisonedStatus : StatusEffect
     {
+        public Agent Victim { get; private set; }
         private float _chipDamage = 3f;
-        public PoisonedStatus(int duration, float power, Sprite icon) : base(duration, power, icon)
+        public PoisonedStatus(Agent user, Agent victim, int duration, float power, Sprite icon) : base(user,  duration, power, icon)
         {
+            Victim = victim;
         }
 
-        public override void OnApply(Agent target)
+        public override void OnApply()
         {
-            target.TakeDamage(_chipDamage, true);
+            Victim.TakeDamage(User, _chipDamage, true);
         }
 
-        public override void OnTurnEnd(Agent target)
+        public override void OnTurnEnd()
         {
-            target.TakeDamage(Power, true);
-            Debug.Log($"{target.name} is poisoned! Dealt {Power}");
+            Victim.TakeDamage(User, Power, true);
+            Debug.Log($"{Victim.name} is poisoned! Dealt {Power}");
         }
-
     }
 }

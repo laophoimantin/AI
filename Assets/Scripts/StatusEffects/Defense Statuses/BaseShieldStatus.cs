@@ -9,9 +9,10 @@ namespace StatusEffects
         public float ReductionPercent { get; protected set; }
         public float Durability { get; protected set; }
         public float CurrentShieldDurability { get; protected set; }
+        public float DurabilityPercent => CurrentShieldDurability / Durability;
 
-        protected BaseShieldStatus(int duration, float power, Sprite icon, float reductionPercent, float durability) :
-            base(duration, power, icon)
+        protected BaseShieldStatus(Agent user, int duration, float power, Sprite icon, float reductionPercent, float durability) :
+            base(user, duration, power, icon)
         {
             ReductionPercent = reductionPercent;
             Durability = durability;
@@ -29,7 +30,7 @@ namespace StatusEffects
             return damage * (1f - ReductionPercent);
         }
 
-        public virtual float AbsorbDamage(float incomingDamage, Agent target)
+        public virtual float AbsorbDamage(Agent attacker, float incomingDamage)
         {
             float potentialBlock = incomingDamage * ReductionPercent;
             float actualBlock = Mathf.Min(potentialBlock, CurrentShieldDurability);

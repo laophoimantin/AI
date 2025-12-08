@@ -9,13 +9,13 @@ namespace StatusEffects
         private int _maxStacks;
         private bool _hasUsedThisTurn;
 
-        public ZapChargeStatus(int duration, float power, Sprite icon, int maxStacks) 
-            : base(duration, power, icon)
+        public ZapChargeStatus(Agent user, int duration, float power, Sprite icon, int maxStacks) 
+            : base(user, duration, power, icon)
         {
             _maxStacks = maxStacks;
         }
 
-        public override void OnTurnStart(Agent target)
+        public override void OnTurnStart()
         {
             _hasUsedThisTurn = false;
         }
@@ -27,7 +27,7 @@ namespace StatusEffects
             Refresh(Duration, 0); 
         }
 
-        public override void OnTurnEnd(Agent target)
+        public override void OnTurnEnd()
         {
             if (!_hasUsedThisTurn && CurrentStacks > 0)
             {

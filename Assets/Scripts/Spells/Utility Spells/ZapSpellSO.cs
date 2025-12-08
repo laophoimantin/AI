@@ -10,8 +10,8 @@ namespace Spells
     [CreateAssetMenu(menuName = "Spells/Zap")]
     public class ZapSpellSO : BaseSpellSO
     {
-        [Header("Zap Config")] [SerializeField]
-        private float _damagePerCharge = 3f;
+        [Header("Zap Config")] 
+        [SerializeField] private float _damagePerCharge = 3f;
         [SerializeField] private int _maxCharges = 5;
         [SerializeField] private int _chargeGainPerCast = 1;
 
@@ -25,11 +25,12 @@ namespace Spells
                 currentStacks = chargeStatus.CurrentStacks;
             }
 
-            // 2. Tính Damage ước tính
             float estimatedDamage = _power + (_damagePerCharge * currentStacks);
 
             if (estimatedDamage >= target.CurrentHealth)
-                return estimatedDamage + 9999;
+            {
+                estimatedDamage += 9999;
+            }
 
             if (currentStacks >= _maxCharges - 1)
             {
@@ -41,7 +42,8 @@ namespace Spells
                 estimatedDamage *= 1.5f;
             }
 
-            return estimatedDamage;
+            _spellScore = estimatedDamage;
+            return Mathf.Max(0, _spellScore);
         }
 
         protected override void SpellEffect(Agent user, Agent target)
@@ -57,14 +59,14 @@ namespace Spells
             }
             else
             {
-                var newBuff = new ZapChargeStatus(_duration, _power, _icon, _maxCharges);
+                var newBuff = new ZapChargeStatus(user,  _utilityDuration, _power, _icon, _maxCharges);
                 user.AddStatus(newBuff);
             }
 
             float totalDamage = _power + (_damagePerCharge * currentStacks);
 
-            target.TakeDamage(totalDamage, true);
-            Debug.Log($"ZAP! Charges: {currentStacks} -> Damage: {totalDamage}");
+            target.TakeDamage(user, totalDamage, true);
+            //Debug.Log($"ZAP! Charges: {currentStacks} -> Damage: {totalDamage}");
         }
     }
 }

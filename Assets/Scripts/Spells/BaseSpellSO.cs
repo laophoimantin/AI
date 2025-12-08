@@ -3,9 +3,7 @@ using Wizardo;
 
 namespace Spells
 {
-    public enum SpellType { Offense, Defense, Utility, Buff, Debuff }
-    public enum TargetType { Enemy, Self }
-    
+    public enum SpellType { Offense, Defense, Utility}
     public abstract class BaseSpellSO : ScriptableObject
     {
         [Header("Identity")]
@@ -23,10 +21,10 @@ namespace Spells
 
         [Header("Buff/Debuff")]
         [Tooltip("Duration in turns for buffs/debuffs.")]
-        [SerializeField] protected int _duration; 
+        [SerializeField] protected int _utilityDuration; 
         
         [Header("AI Tags")]
-        [SerializeField] protected SpellType _type;
+        [SerializeField] protected SpellType[] _types;
 
         protected float _spellScore;
         
@@ -36,10 +34,10 @@ namespace Spells
         public Sprite Icon => _icon;
         public float ManaCost => _manaCost;
         public int CooldownTurns => _cooldownTurns;
-        public SpellType Type => _type;
+        public SpellType[] Types => _types;
         public float Power => _power;
         public float SuccessRate => _successRate;
-        public int Duration => _duration;
+        public int UtilityDuration => _utilityDuration;
 
         protected abstract float EvaluateInternal(Agent user, Agent target);
         protected abstract void SpellEffect(Agent user, Agent target);
@@ -75,11 +73,15 @@ namespace Spells
                 Debug.Log($"{user.Name} failed to cast with {_name}!");
             }
         }
+        
         private bool CheckHitSuccess()
         {
             float roll = Random.Range(0f, 1f);
             return roll <= _successRate;
         }
+        
+        
+        
         protected float GetPerceivedAccuracy(Agent user)
         {
             if (_successRate >= 1.0f || user.Personality == null)

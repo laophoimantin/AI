@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cd4a2cef504a489eb884cc91290e0c35, type: 3}
-  m_Name: Poison Spell SO
+  m_Name: Poison
   m_EditorClassIdentifier: 
   _name: Poison
   _description: 
@@ -19,5 +19,5 @@ MonoBehaviour:
   _cooldownTurns: 2
   _power: 4.5
   _successRate: 0.7
-  _duration: 6
-  _type: 4
+  _utilityDuration: 0
+  _type: 2

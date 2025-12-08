@@ -21,7 +21,6 @@ namespace Wizardo
         public bool IsWinner;
     }
 
-
     public class Agent : MonoBehaviour
     {
         // --- EVENTS ---
@@ -29,8 +28,6 @@ namespace Wizardo
         public event Action<float, float> OnManaChanged;
         public event Action<string> OnDeath;
 
-        [Tooltip("TOGGLE THIS to see the logs")]
-        [SerializeField] private bool _debugAI = true;
 
         [Header("AI Personality")]
         [SerializeField]
@@ -51,9 +48,12 @@ namespace Wizardo
 
         // Getters
         public string Name => _wizardName;
-        public float CurrentHealth => _currentHealth;
         public float MaxHealth => _maxHealth;
+        public float CurrentHealth => _currentHealth;
+        public float HealthPercent => _currentHealth / _maxHealth;
+        public float MaxMana => _maxMana;
         public float CurrentMana => _currentMana;
+        public float ManaPercent => _currentMana / _maxMana;
         public bool IsAlive => _currentHealth > 0;
 
 
@@ -69,14 +69,14 @@ namespace Wizardo
 
         private BaseShieldStatus _currentBaseShield;
         public bool HasShield => _currentBaseShield is { Durability: > 0 };
-
+        public float DurabilityPercent => _currentBaseShield?.DurabilityPercent == null ? 0 : _currentBaseShield.DurabilityPercent;
 
         public event Action<StatusEffect> OnStatusApply;
         public event Action<StatusEffect> OnStatusRemove;
 
 
         // Debug
-        [HideInInspector] public List<SpellDecisionDebug> LastTurnData = new List<SpellDecisionDebug>();
+        [HideInInspector] public List<SpellDecisionDebug> LastTurnData = new();
         [HideInInspector] public float LastTotalWeight;
         [HideInInspector] public float LastWinningTicket;
 
@@ -96,6 +96,7 @@ namespace Wizardo
 
         public void Initialize(List<BaseSpellSO> spellTemplates)
         {
+            
             foreach (Transform child in _spellContainer)
                 Destroy(child.gameObject);
 
@@ -120,36 +121,23 @@ namespace Wizardo
 
             ProcessEffects(true);
 
-            StringBuilder debugLog = null;
-            if (_debugAI)
-            {
-                debugLog = new StringBuilder();
-                debugLog.AppendLine($"--- Agent: {_wizardName} ---");
-                debugLog.AppendLine($"HP: {_currentHealth}/{_maxHealth} | Mana: {_currentMana}");
-                debugLog.AppendLine($"Personality: {(_personality != null ? _personality.name : "None")}");
-                debugLog.AppendLine("----------------------------------------------------------------");
-                debugLog.AppendLine($"{"SPELL",-40} | {"RAW",-5} | {"PERS",-5} | {"NOISE",-5} | {"FINAL",-5}");
-            }
+            
 
             LastTurnData.Clear();
 
             // Phase 1: Evaluation
-            var spellScores = EvaluateAvailableSpells(enemy, debugLog);
+            var spellScores = EvaluateAvailableSpells(enemy);
 
             // Phase 2: Decision
-            SpellInstance chosenSpell = SelectSpellWeighted(spellScores, debugLog);
-
-            if (_debugAI && debugLog != null)
-            {
-                Debug.Log(debugLog.ToString());
-            }
+            SpellInstance chosenSpell = SelectSpellWeighted(spellScores);
+            
 
             // Phase 3: Action
             TryCastSelectedSpellOn(chosenSpell, enemy);
             ProcessEffects(false);
         }
 
-        private Dictionary<SpellInstance, float> EvaluateAvailableSpells(Agent enemy, StringBuilder log)
+        private Dictionary<SpellInstance, float> EvaluateAvailableSpells(Agent enemy)
         {
             var scoreDict = new Dictionary<SpellInstance, float>();
 
@@ -166,20 +154,19 @@ namespace Wizardo
 
                 if (_personality != null)
                 {
-                    personalityMod = _personality.GetModifierForType(spellInstance.BaseSpell.Type);
-                    finalScore *= personalityMod;
+                    foreach (var type in spellInstance.BaseSpell.Types)
+                    {
+                        personalityMod = _personality.GetModifierForType(type);
+                        finalScore *= personalityMod;
+                    }
+                    
 
                     noise = UnityEngine.Random.Range(1.0f - _personality.Randomness, 1.0f + _personality.Randomness);
                     finalScore *= noise;
                 }
-
                 scoreDict.Add(spellInstance, finalScore);
-                if (log != null)
-                {
-                    log.AppendLine($"{spellInstance.BaseSpell.Name,-40} | {rawScore,-5:F0} | {personalityMod,-5:F1} | {noise,-5:F2} | {finalScore,-5:F0}");
-                }
 
-
+                
                 LastTurnData.Add(new SpellDecisionDebug
                 {
                     SpellName = spellInstance.BaseSpell.Name,
@@ -189,26 +176,40 @@ namespace Wizardo
                     FinalScore = finalScore,
                     IsWinner = false
                 });
+
             }
 
+            // 2. THE PODIUM CULLING
+            // If we are being smart (Randomness <= 0), eliminate everything that isn't in the Top 3.
+            if (_personality != null && _personality.Randomness <= 0 && scoreDict.Count > 3)
+            {
+                // Sort descending, take the Top 3 Keys, and convert to a HashSet for fast lookup
+                var top3Spells = scoreDict.OrderByDescending(x => x.Value)
+                                                              .Take(3)
+                                                              .Select(x => x.Key)
+                                                              .ToHashSet();
 
+                // Find the losers (keys NOT in the top 3)
+                // We must convert to a List to iterate safely while modifying the dictionary
+                var losers = scoreDict.Keys.Where(k => !top3Spells.Contains(k)).ToList();
+
+                // Delete the losers
+                foreach (var loser in losers)
+                {
+                    scoreDict.Remove(loser);
+                }
+            }
             return scoreDict;
         }
 
-        private SpellInstance SelectSpellWeighted(Dictionary<SpellInstance, float> spellScores, StringBuilder log)
+        private SpellInstance SelectSpellWeighted(Dictionary<SpellInstance, float> spellScores)
         {
             if (spellScores.Count == 0) return null;
 
             float totalScore = spellScores.Sum(x => x.Value);
             float randomValue = UnityEngine.Random.Range(0, totalScore);
-
-            if (log != null)
-            {
-                log.AppendLine("----------------------------------------------------------------");
-                log.AppendLine($"Total Weight: {totalScore:F1} | Winning Ticket: {randomValue:F1}");
-                log.AppendLine("--- PROBABILITY BREAKDOWN ---");
-            }
-
+            
+            
             // SAVE DATA FOR EDITOR
             LastTotalWeight = totalScore; // <--- Capture
             LastWinningTicket = randomValue; // <--- Capture
@@ -217,37 +218,13 @@ namespace Wizardo
             float currentSum = 0;
             bool found = false;
 
-            // DEBUG ===============================
-            foreach (var pair in spellScores)
-            {
-                if (log != null)
-                {
-                    float percent = (pair.Value / totalScore) * 100f;
-                    // Check if this is the winner to mark it in the log
-                    bool isThisTheWinner = !found && (currentSum + pair.Value >= randomValue);
-                    string winnerMarker = isThisTheWinner ? "<< WON" : "";
-                    log.AppendLine($"{pair.Key.BaseSpell.Name,-40}: {percent:F1}% {winnerMarker}");
-                }
-
-                if (!found)
-                {
-                    currentSum += pair.Value;
-                    if (currentSum >= randomValue)
-                    {
-                        selected = pair.Key;
-                        found = true;
-                    }
-                }
-            }
-
             foreach (var pair in spellScores)
             {
                 var debugEntry = LastTurnData.FirstOrDefault(x => x.SpellName == pair.Key.BaseSpell.Name);
 
                 if (debugEntry != null)
                 {
-                    // Calculate percentage for the UI
-                    debugEntry.WinChance = (pair.Value / totalScore);
+                    debugEntry.WinChance = totalScore > 0 ? (pair.Value / totalScore) : 0;
                 }
 
                 if (!found)
@@ -263,14 +240,15 @@ namespace Wizardo
                     }
                 }
             }
-            //Debugggggggggggggggggggggggggggggggggggggg
 
 
             // Fallback: Return the highest score (handles potential float precision edge cases)
             if (selected == null)
             {
                 selected = spellScores.OrderByDescending(x => x.Value).First().Key;
-                if (log != null) log.AppendLine("!! FALLBACK TRIGGERED !!");
+                
+                var fallbackEntry = LastTurnData.FirstOrDefault(x => x.SpellName == selected.BaseSpell.Name);
+                if (fallbackEntry != null) fallbackEntry.IsWinner = true;
             }
 
             return selected;
@@ -308,13 +286,14 @@ namespace Wizardo
         #region Health and Mana
 
         // Health ======
-        public float EstimateIncomingDamage(float damage)
+        public float EstimateIncomingDamage(float damage, bool isShieldIgnored = false)
         {
             if (!HasShield) return damage;
+            if (isShieldIgnored) return damage;
             return _currentBaseShield.ModifyDamage(damage);
         }
 
-        public void TakeDamage(float incomingDamage, bool isShieldIgnored = false)
+        public void TakeDamage(Agent attacker, float incomingDamage, bool isShieldIgnored = false)
         {
             if (!IsAlive) return;
 
@@ -322,7 +301,7 @@ namespace Wizardo
 
             if (!isShieldIgnored && HasShield)
             {
-                finalDamage = _currentBaseShield.AbsorbDamage(finalDamage, this);
+                finalDamage = _currentBaseShield.AbsorbDamage(attacker, finalDamage);
             }
 
             if (finalDamage > 0)
@@ -391,7 +370,7 @@ namespace Wizardo
             else
             {
                 _statuses.Add(status);
-                status.OnApply(this);
+                status.OnApply();
                 OnStatusApply?.Invoke(status);
             }
 
@@ -410,11 +389,11 @@ namespace Wizardo
 
                 if (isStartOfTurn)
                 {
-                    status.OnTurnStart(this);
+                    status.OnTurnStart();
                 }
                 else
                 {
-                    status.OnTurnEnd(this);
+                    status.OnTurnEnd();
                     status.ReduceDuration();
                 }
 
@@ -427,7 +406,7 @@ namespace Wizardo
 
         private void RemoveStatus(StatusEffect status, int index)
         {
-            status.OnExpire(this);
+            status.OnExpire();
             _statuses.RemoveAt(index);
 
             if (status is BaseShieldStatus)

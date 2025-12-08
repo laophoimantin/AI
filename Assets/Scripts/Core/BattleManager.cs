@@ -21,6 +21,9 @@ namespace Core
         [SerializeField] private Agent _redWizard;
         [SerializeField] private Agent _blueWizard;
         [SerializeField] private List<BaseSpellSO> _spellBook; // assign in inspector
+        
+        public Agent RedWizard => _redWizard;
+        public Agent BlueWizard => _blueWizard;
 
         [Header("UI References")]
         [SerializeField] private TextMeshProUGUI _roundDisplay;
