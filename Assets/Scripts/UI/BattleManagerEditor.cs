@@ -50,7 +50,7 @@ public class BattleManagerEditor : Editor
             // Header
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
             GUILayout.Label("Spell Name", GUILayout.Width(120));
-            GUILayout.Label("Raw", GUILayout.Width(40));
+            GUILayout.Label("RawScore", GUILayout.Width(40));
             GUILayout.Label("Pers", GUILayout.Width(40));
             GUILayout.Label("Noise", GUILayout.Width(40));
             GUILayout.Label("Final Score", GUILayout.Width(100));

@@ -20,4 +20,4 @@ MonoBehaviour:
   _power: 35
   _successRate: 1
   _utilityDuration: 0
-  _type: 1
+  _types: 01000000

@@ -20,5 +20,5 @@ MonoBehaviour:
   _power: 0
   _successRate: 1
   _utilityDuration: 0
-  _types: 
+  _types: 02000000
   _sacrificedHealth: 20

@@ -4,7 +4,7 @@ using Wizardo;
 namespace Spells
 {
     /// <summary>
-    ///  Offense spell. Big button spell. Low accuracy. High mana cost. High damage. High risk.
+    /// Offense spell. Big button spell. Low accuracy. High mana cost. High damage. High risk.
     /// The user deals with damage based on accuracy and damage perception.
     /// </summary>
     /// <remarks>

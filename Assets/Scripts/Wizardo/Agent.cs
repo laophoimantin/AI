@@ -121,8 +121,6 @@ namespace Wizardo
 
             ProcessEffects(true);
 
-            
-
             LastTurnData.Clear();
 
             // Phase 1: Evaluation
@@ -166,7 +164,7 @@ namespace Wizardo
                 }
                 scoreDict.Add(spellInstance, finalScore);
 
-                
+                // Debug Data Capture
                 LastTurnData.Add(new SpellDecisionDebug
                 {
                     SpellName = spellInstance.BaseSpell.Name,
@@ -180,7 +178,7 @@ namespace Wizardo
             }
 
             // 2. THE PODIUM CULLING
-            // If we are being smart (Randomness <= 0), eliminate everything that isn't in the Top 3.
+            // If the agent are being smart (Randomness <= 0), eliminate everything that isn't in the Top 3.
             if (_personality != null && _personality.Randomness <= 0 && scoreDict.Count > 3)
             {
                 // Sort descending, take the Top 3 Keys, and convert to a HashSet for fast lookup
@@ -190,7 +188,6 @@ namespace Wizardo
                                                               .ToHashSet();
 
                 // Find the losers (keys NOT in the top 3)
-                // We must convert to a List to iterate safely while modifying the dictionary
                 var losers = scoreDict.Keys.Where(k => !top3Spells.Contains(k)).ToList();
 
                 // Delete the losers

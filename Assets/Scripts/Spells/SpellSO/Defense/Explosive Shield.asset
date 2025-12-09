@@ -20,7 +20,7 @@ MonoBehaviour:
   _power: 0
   _successRate: 1
   _utilityDuration: 0
-  _type: 1
+  _types: 0000000002000000
   _reductionPercent: 0.5
   _shieldDurability: 8
   _shieldDuration: 3

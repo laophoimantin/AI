@@ -50,7 +50,7 @@ namespace Spells
             _spellScore = effectiveShieldHP + (_power * 0.6f);
 
 
-            // 2. Contextual Penalties =================================================
+            // 2. Situational Modifiers =================================================
             // If the user already has a shield
             if (user.HasShield)
             {

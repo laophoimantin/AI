@@ -23,7 +23,7 @@ namespace Spells
         [Tooltip("Duration in turns for buffs/debuffs.")]
         [SerializeField] protected int _utilityDuration; 
         
-        [Header("AI Tags")]
+        [Header("Spell Type")]
         [SerializeField] protected SpellType[] _types;
 
         protected float _spellScore;
