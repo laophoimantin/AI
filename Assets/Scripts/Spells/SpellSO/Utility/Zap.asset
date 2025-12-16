@@ -13,14 +13,17 @@ MonoBehaviour:
   m_Name: Zap
   m_EditorClassIdentifier: 
   _name: Zap
-  _description: 
+  _description: 'The "Filler" Spell. Low cost, low cooldown, stacking damage.
+
+    Good
+    for finishing off enemies, countering shields, or saving mana?'
   _icon: {fileID: 21300000, guid: c29074e75cc53a34caa4a6af5feb5796, type: 3}
-  _manaCost: 0
+  _manaCost: 4
   _cooldownTurns: 0
-  _power: 0
+  _power: 6
   _successRate: 1
+  _types: 02000000
   _utilityDuration: 0
-  _types: 
-  _damagePerCharge: 3
+  _damagePerCharge: 3.5
   _maxCharges: 5
   _chargeGainPerCast: 1

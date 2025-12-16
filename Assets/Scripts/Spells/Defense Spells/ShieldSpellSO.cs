@@ -5,20 +5,23 @@ using Wizardo;
 namespace Spells
 {
     /// <summary>
-    /// Defense spell. Good stats. Nothing else.
-    /// The user gains a shield that reduces incoming damage by a percentage
+    /// A standard defense spell. Provides a shield that reduces incoming damage by a percentage.
     /// </summary>
     /// <remarks>
-    /// Design Note: Basic shield.
+    /// Design Note: Basic defense. Good stats. Nothing else.
     /// </remarks>
     [CreateAssetMenu(menuName = "Spells/Standard Shield")]
     public class ShieldSpellSO : BaseSpellSO
     {
         [Header("Shield Config")]
-        
+        [Tooltip("The percentage of damage blocked (0.0 to 1.0)")]
         [SerializeField, Range (0, 0.9f)] private float _reductionPercent  = 0.25f;
+        
+        [Tooltip("The base durability (Health) of the shield.")]
         [SerializeField] private float _shieldDurability = 20f;
-        [SerializeField] private int _shieldDuration = 2;
+        
+        [Tooltip("How many turns the shield lasts.")]
+        [SerializeField] private int _shieldDuration = 3;
         
         protected override float EvaluateInternal(Agent user, Agent target)
         {
@@ -28,22 +31,19 @@ namespace Spells
                 Debug.Log("Reduction percent cannot be less than or equal to zero");
                 return 0;
             }
-            
             // Calculate Probability
             // Check if the user would actually risk using this spell if the spell has low accuracy
-            float perceivedAcc = GetPerceivedAccuracy(user);
+            float perceivedAccuracy = GetPerceivedAccuracy(user);
             
-            // 1. Base Effectiveness Calculation =================================================
+            // 1. Base Effectiveness
             // The higher the reduction percent, the more effective the shield is
             // Formula: Durability / (1 - reductionPercent)
             _spellScore = _shieldDurability / (1.0f - _reductionPercent);
             
-            // 2. Contextual Penalties =================================================
-            // If the user already has a shield
+            // 2. Situational Modifiers
             if (user.HasShield)
             {
                 // Only replace an existing shield if it's about to break (< 30% durability)
-                // If the current shield is about to break, this spell is worth a bit
                 if (user.DurabilityPercent < 0.3f)
                 {
                     _spellScore *= 0.8f; // Slight penalty for overlap
@@ -55,32 +55,31 @@ namespace Spells
                 }
             }
             
-            // 3. Survival Priorities ==================================================
-            // Critical: If the user is near death (< 30%), bonus points
-            if (user.ManaPercent < 0.3f)
+            // 3. Survival Priorities
+            // Critical: If the user is near death (< 30%), need a shield to survive
+            if (user.HealthPercent < 0.3f)
             {
                 // The user desperately needs this shield or it will die
-                _spellScore *= 2.5f; // Cheap shield so having more values.
+                _spellScore *= 2.5f; // Cheap shield so it has more values.
             }
-            // Warning: If health is low (< 70%), bonus points
-            else if (user.CurrentHealth < 0.7f)
+            // Warning: If health is low (< 70%), a shield would be a good idea
+            else if (user.HealthPercent < 0.7f)
             {
-                // If the health is low, a shield would be a good idea
                 _spellScore *= 1.5f;
             }
             
             // 4. Counters
-            // Counter-Play: If the enemy has Mana (>40%) to cast multiple nukes, a shield would be a good idea
-            if (target.CurrentMana > 40)
+            // Counter-Play: If the enemy has Mana (>40%) to deal high damage, a shield would be a good idea
+            if (target.ManaPercent > 0.4f)
             {
                 _spellScore *= 1.2f;
             }
 
-            // 5. Costs ==================================================
+            // 5. Cost 
+            // Accuracy penalty
+            _spellScore *= perceivedAccuracy;
             // Mana cost penalty
             _spellScore -= _manaCost * 0.5f;
-            
-            _spellScore *= perceivedAcc;
             
             // Return the score
             return Mathf.Max(0, _spellScore);

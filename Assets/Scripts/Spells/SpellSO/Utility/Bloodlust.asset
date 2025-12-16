@@ -13,12 +13,11 @@ MonoBehaviour:
   m_Name: Bloodlust
   m_EditorClassIdentifier: 
   _name: Bloodlust
-  _description: 
+  _description: Health for Mana
   _icon: {fileID: 21300000, guid: 8adee60ebd3c06a4eae36345a7d4f98d, type: 3}
   _manaCost: 0
-  _cooldownTurns: 0
-  _power: 0
+  _cooldownTurns: 7
+  _power: 45
   _successRate: 1
-  _utilityDuration: 0
   _types: 02000000
-  _sacrificedHealth: 20
+  _sacrificedHealth: 25

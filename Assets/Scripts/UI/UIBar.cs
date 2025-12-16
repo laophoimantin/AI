@@ -4,6 +4,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// UI Bar for displaying health and mana.
+/// </summary>
 public class UIBar : MonoBehaviour
 {
     [SerializeField] private Image _barImage;

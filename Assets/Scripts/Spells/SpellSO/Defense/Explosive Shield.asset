@@ -13,14 +13,17 @@ MonoBehaviour:
   m_Name: Explosive Shield
   m_EditorClassIdentifier: 
   _name: Explosive Shield
-  _description: 
+  _description: 'A "medium-risk" Shield. It has high durability but very low damage
+    reduction.
+
+    If the shield survives the full duration, it explodes dealing
+    damage to the target.'
   _icon: {fileID: 21300000, guid: 934cdc180e5885c48a894a291d7eccc3, type: 3}
-  _manaCost: 0
-  _cooldownTurns: 0
-  _power: 0
-  _successRate: 1
-  _utilityDuration: 0
+  _manaCost: 20
+  _cooldownTurns: 4
+  _power: 30
+  _successRate: 0.929
   _types: 0000000002000000
-  _reductionPercent: 0.5
-  _shieldDurability: 8
-  _shieldDuration: 3
+  _reductionPercent: 0.1
+  _shieldDurability: 30
+  _shieldDuration: 4

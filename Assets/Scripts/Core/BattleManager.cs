@@ -5,23 +5,35 @@ using Spells;
 using TMPro;
 using UnityEngine;
 using Wizardo;
+using Random = UnityEngine.Random;
 
 namespace Core
 {
+    /// <summary>
+    /// Manages the battle between two wizards.
+    /// Simulates a turn-based battle.
+    /// Hardcoded to be two-player.
+    /// </summary>
     public class BattleManager : MonoBehaviour
     {
-        public static BattleManager Instance { get; private set; }
-        
-        public event Action OnTurnChanged;
+        public static BattleManager Instance { get; private set; } // Singleton
 
         [Header("Battle Settings")]
+        [SerializeField] private bool _applyNewPers = true;
+        // Time in seconds between actions.
         [SerializeField] private float _turnDuration;
 
         [Header("Wizards")]
         [SerializeField] private Agent _redWizard;
         [SerializeField] private Agent _blueWizard;
-        [SerializeField] private List<BaseSpellSO> _spellBook; // assign in inspector
-        
+
+        // The shared pool of spells available to both wizards.
+        [SerializeField] private List<BaseSpellSO> _spellBook;
+
+        // The pool of personality profiles available to both wizards.
+        [SerializeField] private List<PersonalitySO> _personalityPool;
+
+        // Getters
         public Agent RedWizard => _redWizard;
         public Agent BlueWizard => _blueWizard;
 
@@ -30,11 +42,13 @@ namespace Core
         [SerializeField] private TextMeshProUGUI _turnArrowText;
         [SerializeField] private TextMeshProUGUI _spellCastText;
 
-        private int _currentRound;
+        private int _currentRound = 1;
 
+        public event Action OnTurnChanged;
 
         void Awake()
         {
+            // Singleton pattern, nothing else
             if (Instance != null && Instance != this)
             {
                 Destroy(this);
@@ -52,60 +66,103 @@ namespace Core
                 Debug.LogError("Wizards are not assigned in BattleManager!");
                 return;
             }
-            _redWizard.Initialize(_spellBook);
-            _blueWizard.Initialize(_spellBook);
+
+            if (_applyNewPers)
+            {
+                // Pick Random Personality
+                int redRandomIndex = Random.Range(0, _personalityPool.Count);
+                PersonalitySO redPersonality = _personalityPool[redRandomIndex];
+
+                int blueRandomIndex = Random.Range(0, _personalityPool.Count);
+                if (redRandomIndex == blueRandomIndex) // Prevent the same personality
+                {
+                    blueRandomIndex++;
+                    if (blueRandomIndex >= _personalityPool.Count) blueRandomIndex = 0;
+                }
+
+                PersonalitySO bluePersonality = _personalityPool[blueRandomIndex];
+
+                // Initialize the wizards
+                _redWizard.Initialize(_spellBook, redPersonality);
+                _blueWizard.Initialize(_spellBook, bluePersonality);
+            }
+            else
+            {
+                _redWizard.Initialize(_spellBook);
+                _blueWizard.Initialize(_spellBook);
+            }
+
+            // Start the battle
             StartCoroutine(SimulateBattle());
         }
 
 
-
-
+        /// <summary>
+        /// Simulates a turn-based battle between the two wizards.
+        /// </summary>
         private IEnumerator SimulateBattle()
         {
-            bool redTurn = UnityEngine.Random.Range(0, 2) == 0;
+            // Coin Flip: 0 = Red, 1 = Blue
+            bool redTurn = Random.Range(0, 2) == 0;
 
             DisplayCombatMessage("Battle Start!");
+            UpdateRoundUI();
+
+            // Delay the start of the battle
             yield return new WaitForSeconds(_turnDuration / 2);
 
+            // Main Loop =======
             while (_redWizard.IsAlive && _blueWizard.IsAlive)
             {
-                OnTurnChanged?.Invoke();
-                _roundDisplay.text = $"Round {_currentRound}";
-                Debug.LogWarning("New Turn!!!");
-
                 Agent currentAgent = redTurn ? _redWizard : _blueWizard;
                 Agent targetAgent = redTurn ? _blueWizard : _redWizard;
 
+                OnTurnChanged?.Invoke();
+                Debug.LogWarning($"--- Turn Start: {currentAgent.Name} ---");
+
+                // Display the turn indicator (arrow)
                 if (_turnArrowText != null)
                 {
                     _turnArrowText.text = redTurn ? "<=====" : "=====>";
                     _turnArrowText.color = redTurn ? Color.red : Color.blue;
                 }
 
+                // The Agent calculates logic and performs the spell...
                 currentAgent.TakeTurn(targetAgent);
 
+                // Delay the end of the turn
                 yield return new WaitForSeconds(_turnDuration / 2);
 
                 if (!targetAgent.IsAlive) break;
-
                 redTurn = !redTurn;
-
-                if (redTurn) _currentRound++;
+                if (redTurn)
+                {
+                    _currentRound++;
+                    UpdateRoundUI();
+                }
             }
+            // ======================
 
-            // End Game
+            // End Game =======
             string winner = _redWizard.IsAlive ? _redWizard.Name : _blueWizard.Name;
             DisplayCombatMessage($"GAME OVER! {winner} Wins!");
             Debug.Log($"Winner: {winner}");
         }
 
+        // Update the round counter in the UI
+        private void UpdateRoundUI()
+        {
+            if (_roundDisplay != null)
+                _roundDisplay.text = $"Round {_currentRound}";
+        }
+
+        // Display a message in the UI
+        // Display what spell the user cast in the UI
         public void DisplayCombatMessage(string message)
         {
             if (_spellCastText != null)
                 _spellCastText.text = message;
         }
-
-
 
 
         // private IEnumerator SimulateBattle()

@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7fd7a98f33044c9eba461f693f487366, type: 3}
-  m_Name: Berserker
+  m_Name: Gambler
   m_EditorClassIdentifier: 
-  Name: Berserker
-  Description: Focus on attacking
-  Aggression: 2
-  Caution: 0.559
-  Utility: 0.3
-  RiskTaking: 1
-  Randomness: 0.3
+  Name: Gambler
+  Description: Gambler
+  Aggression: 1.2
+  Caution: 1.2
+  Utility: 1.2
+  RiskTaking: 0.8
+  Randomness: 0.9

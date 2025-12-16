@@ -13,11 +13,10 @@ MonoBehaviour:
   m_Name: Lightning Strike Spell
   m_EditorClassIdentifier: 
   _name: Lightning Strike
-  _description: 
+  _description: Good damage, decent mana cost, decent accuracy, ignores shields.
   _icon: {fileID: 21300000, guid: 183c1b8f579faa7449d9c8f092c94df6, type: 3}
-  _manaCost: 25
-  _cooldownTurns: 4
-  _power: 35
-  _successRate: 0.5
-  _duration: 0
-  _type: 0
+  _manaCost: 20
+  _cooldownTurns: 3
+  _power: 25
+  _successRate: 0.647
+  _types: 00000000

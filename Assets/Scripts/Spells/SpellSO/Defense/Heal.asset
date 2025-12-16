@@ -13,11 +13,10 @@ MonoBehaviour:
   m_Name: Heal
   m_EditorClassIdentifier: 
   _name: Heal
-  _description: 
+  _description: Heal
   _icon: {fileID: 21300000, guid: 76903a204c342b8488f73d2c02a6cea5, type: 3}
   _manaCost: 25
-  _cooldownTurns: 6
+  _cooldownTurns: 5
   _power: 35
-  _successRate: 1
-  _utilityDuration: 0
+  _successRate: 0.789
   _types: 01000000

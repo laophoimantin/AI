@@ -3,24 +3,28 @@ using Wizardo;
 
 namespace StatusEffects
 {
+    /// <summary>
+    /// Poisoned Status. Deals damage to the target every turn.
+    /// </summary>
     public class PoisonedStatus : StatusEffect
     {
-        public Agent Victim { get; private set; }
-        private float _chipDamage = 3f;
+        private Agent _victim;
         public PoisonedStatus(Agent user, Agent victim, int duration, float power, Sprite icon) : base(user,  duration, power, icon)
         {
-            Victim = victim;
+            _victim = victim;
         }
 
+        // Deal chip damage on applying the status
         public override void OnApply()
         {
-            Victim.TakeDamage(User, _chipDamage, true);
+            _victim.TakeDamage(User, Power * 0.3f, true);
         }
 
+        // Deal damage on the end of turn
         public override void OnTurnEnd()
         {
-            Victim.TakeDamage(User, Power, true);
-            Debug.Log($"{Victim.name} is poisoned! Dealt {Power}");
+            _victim.TakeDamage(User, Power, true);
+            Debug.Log($"{_victim.name} is poisoned! Dealt {Power}");
         }
     }
 }
