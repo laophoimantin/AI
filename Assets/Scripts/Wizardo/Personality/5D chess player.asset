@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: 5D chess player
   m_EditorClassIdentifier: 
   Name: 5D chess player
-  Description: Focus on Utility
+  Description: Focus on Utility Spells
   Aggression: 0.6
   Caution: 0.8
   Utility: 2

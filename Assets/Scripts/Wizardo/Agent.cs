@@ -221,8 +221,8 @@ namespace Wizardo
             }
 
             // 2. Acting smart
-            // If the agent is smart (randomness <= 0.5), remove everything that isn't in the Top 3.
-            if (_personality != null && _personality.Randomness <= 0.5 && scoreDict.Count > 3)
+            // If the agent is smart (randomness <= 0.2), remove everything that isn't in the Top 3.
+            if (_personality != null && _personality.Randomness <= 0.2 && scoreDict.Count > 3)
             {
                 // Sort descending, take the top 3 Keys, and convert to a HashSet for fast lookup
                 var top3Spells = scoreDict.OrderByDescending(x => x.Value)

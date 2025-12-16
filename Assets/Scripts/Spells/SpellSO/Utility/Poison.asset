@@ -16,7 +16,7 @@ MonoBehaviour:
   _description: Poisons the target for a short duration.
   _icon: {fileID: 21300000, guid: 199e2047b64a7ee47bd82cd9b90dda7a, type: 3}
   _manaCost: 20
-  _cooldownTurns: 2
+  _cooldownTurns: 4
   _power: 4
   _successRate: 0.7
   _types: 02000000

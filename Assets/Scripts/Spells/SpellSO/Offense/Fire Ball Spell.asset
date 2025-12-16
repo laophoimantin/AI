@@ -16,7 +16,7 @@ MonoBehaviour:
   _description: Standard Damage Source
   _icon: {fileID: 21300000, guid: 73488be0ad867834896528efa2bdb7db, type: 3}
   _manaCost: 15
-  _cooldownTurns: 2
+  _cooldownTurns: 3
   _power: 20
   _successRate: 1
   _types: 00000000

@@ -25,7 +25,7 @@ namespace Wizardo
         [Range(0f, 2f)] public float Utility = 1.0f;
         
         [Header("Behavioral Traits")] // Makes the AI more unpredictable
-        [Tooltip("Delusion level! Affects decisions for low-accuracy spells.\n< 0.3 = Snap back to reality \n~ 0.5 = A wizard who thinks all the time \n> 0.7 = Gambling blood flows in the body")]
+        [Tooltip("Delusion level. Affects decisions for low-accuracy spells.\n< 0.3 = Snap back to reality \n~ 0.5 = A wizard who thinks all the time \n> 0.7 = Gambling blood flows in the body")]
         [Range(0f, 1f)] public float RiskTaking = 0.5f;
 
         [Tooltip("Affects the final spell selection.\n0.0 = Perfect Robot \n0.2 = Smart Human \n0.5 = Drunk Wizard \n>0.5 = The greatest gambler!")]

@@ -77,7 +77,7 @@ public class BattleManagerEditor : Editor
             
             // SUMMARY BOX ======
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            GUILayout.Label($"Total Score/Weight: {wizard.LastTotalWeight:F1}"); // Total score of all spells
+            GUILayout.Label($"Total Score: {wizard.LastTotalWeight:F1}"); // Total score of all spells
             GUILayout.Label($"Final Ticket: {wizard.LastWinningTicket:F1}"); // Final Ticket (random value that determines the winner)
             EditorGUILayout.EndVertical();
             // END SUMMARY BOX ======
