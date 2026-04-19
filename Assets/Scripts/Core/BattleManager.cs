@@ -48,7 +48,6 @@ namespace Core
 
         void Awake()
         {
-            // Singleton pattern, nothing else
             if (Instance != null && Instance != this)
             {
                 Destroy(this);
@@ -163,37 +162,5 @@ namespace Core
             if (_spellCastText != null)
                 _spellCastText.text = message;
         }
-
-
-        // private IEnumerator SimulateBattle()
-        // {
-        //     bool blueStarts = Random.Range(0, 2) == 0;
-        //     Agent currentAgent = blueStarts? _blueWizard: _redWizard;
-        //     Agent target = blueStarts? _redWizard: _blueWizard;
-        //     _turnArrowText.text = currentAgent == _redWizard ? "<=====" : "=====>";
-        //     _turnArrowText.color = currentAgent == _redWizard? Color.red: Color.blue;
-        //     
-        //     yield return new WaitForSeconds(1.5f);
-        //     Debug.Log("Battle started!");
-        //     _currentRound++;
-        //     
-        //     while (_redWizard.IsAlive && _blueWizard.IsAlive)
-        //     {
-        //         _turnArrowText.text = currentAgent == _redWizard ? "<=====" : "=====>";
-        //         _turnArrowText.color = currentAgent == _redWizard? Color.red: Color.blue;
-        //         
-        //         yield return new WaitForSeconds(2f);
-        //         
-        //         currentAgent.TakeTurn(target);
-        //         _roundDisplay.text = $"Round {_currentRound++}";
-        //         
-        //         
-        //         yield return new WaitForSeconds(2f);
-        //
-        //         (currentAgent, target) = (target, currentAgent);
-        //     }
-        //     
-        //     Debug.Log($"Winner: {(_redWizard.IsAlive ? _redWizard.name: _blueWizard.name)}");
-        // }
     }
 }

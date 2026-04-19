@@ -8,19 +8,28 @@ using UnityEngine.UI;
 public class UIBar : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer _barImage;
-    [SerializeField] private TextMeshProUGUI _text;
+    [SerializeField] private TextMeshPro _text;
     private float _maxWidth;
     private float _maxHeight;
 
-    void Start()
+    void Awake()
     {
         _maxWidth = _barImage.size.x;
         _maxHeight = _barImage.size.y;
     }
+
     public void UpdateBar(float maxValue, float currentValue)
     {
+        if (maxValue <= 0)
+        {
+            _barImage.size = new Vector2(0, _maxHeight);
+            _text.text = $"0/0";
+            return;
+        }
 
-        _barImage.size = new Vector2( (currentValue / maxValue) * _maxWidth, _maxHeight);
-        _text.text = $"{currentValue}/{maxValue}";
+        float current = Mathf.Clamp(currentValue, 0, maxValue);
+
+        _barImage.size = new Vector2((current / maxValue) * _maxWidth, _maxHeight);
+        _text.text = $"{current}/{maxValue}";
     }
 }

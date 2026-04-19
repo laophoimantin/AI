@@ -95,21 +95,13 @@ namespace Wizardo
             BattleManager.Instance.OnTurnChanged -= HandleTurnChanged;
         }
 
-        void Start()
-        {
-            _currentHealth = _maxHealth;
-            _currentMana = _maxMana;
-
-            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
-            OnManaChanged?.Invoke(_currentMana, _maxMana);
-            OnPersonalityChanged?.Invoke(_personality);
-        }
-
         public void Initialize(List<BaseSpellSO> spellTemplates, PersonalitySO personality = null)
         {
             // Clear old spells 
             foreach (Transform child in _spellContainer)
+            {
                 Destroy(child.gameObject);
+            }
             _spellBook.Clear();
 
             // Instantiate new spells
@@ -120,11 +112,23 @@ namespace Wizardo
                 _spellBook.Add(instance);
             }
 
+            _currentHealth = _maxHealth;
+            _currentMana = _maxMana;
+            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+            OnManaChanged?.Invoke(_currentMana, _maxMana);
+
             // Apply personality
             if (personality != null)
+            {
                 _personality = personality;
+                OnPersonalityChanged?.Invoke(_personality); 
+            }
 
-            BattleManager.Instance.OnTurnChanged += HandleTurnChanged;
+            if (BattleManager.Instance != null)
+            {
+                BattleManager.Instance.OnTurnChanged -= HandleTurnChanged;
+                BattleManager.Instance.OnTurnChanged += HandleTurnChanged; 
+            }
         }
 
 
@@ -499,134 +503,6 @@ namespace Wizardo
         }
     }
 }
-
-// public bool HasStatus(StatusType type)
-// {
-//     return _statuses.Exists(status => status.Type == type);
-// }
-
-// public void AddStatus(StatusType type, int duration, float power)
-// {
-//     var existing = _statuses.Find(status => status.Type == type);
-//
-//     if (existing != null)
-//     {
-//         existing.Duration = duration;
-//         existing.Power = power;
-//     }
-//     else
-//     {
-//         _statuses.Add(new StatusEffect { Type = type, Duration = duration, Power = power });
-//         
-//     }
-// }
-
-
-// public void TakeTurn(Agent enemy)
-// {
-//     if (!IsAlive) return;
-//     
-//     ModifyMana(_manaRegenRate);
-//     DecayShield();
-//     ReduceCooldown();
-//     
-//     SpellInstance bestSpell = null;
-//     float bestValue = float.MinValue;
-//
-//     foreach (var spell in _spellBook)
-//     {
-//         if (!spell.IsReady(this)) continue;
-//
-//         float value = spell.Spell.Evaluate(this, enemy);
-//         if (value > bestValue)
-//         {
-//             bestValue = value;
-//             bestSpell = spell;
-//         }
-//     }
-//
-//     _currentSpell = bestSpell;
-//     
-//     
-//     if (_currentSpell != null)
-//     {
-//         _currentSpell.ExecuteSpell(this, enemy);
-//         BattleManager.Instance.DisplayCombatMessage($"{Name} casts {_currentSpell.Spell.Name}");
-//     }
-//     else
-//     {
-//         Debug.Log($"{_wizardName} has no valid spell to cast.");
-//         BattleManager.Instance.DisplayCombatMessage($"{Name} skips turn (No valid spells).");
-//     }
-// }
-// public void TakeTurn(Agent enemy)
-// {
-//     SpellSO bestSpellSo = null;
-//     float bestUtility = float.NegativeInfinity;
-//
-//     foreach (var spell in _spells)
-//     {
-//         if (_currentMana < spell.ManaCost) continue;
-//         
-//         float utility = spell.Evaluate(this, enemy);
-//         if (utility > bestUtility)
-//         {
-//             bestUtility = utility;
-//             bestSpellSo = spell;
-//         }
-//     }
-//     
-//     if (bestSpellSo == null)
-//     {
-//         Debug.LogWarning($"{name} cannot cast any spell (mana: {_currentMana})");
-//         _currentMana = Mathf.Min(_maxMana, _currentMana + _manaRegenRate);
-//         return;
-//     }
-//
-//     _currentSpellSo = bestSpellSo;
-//     _currentSpellSo?.Cast(this, enemy);
-//     
-//     _currentMana = Mathf.Min(_maxMana, _currentMana + _manaRegenRate);
-// }
-// private void DrawLabel(Vector2 screenPoint, string text, float yOffset)
-// {
-//     var style = GUI.skin.label;
-//
-//     var content = new GUIContent(text);
-//     var size = style.CalcSize(content);
-//
-//     float x = screenPoint.x - (size.x / 2f);
-//
-//     float y = Screen.height - screenPoint.y - size.y - yOffset;
-//
-//     GUI.Label(new Rect(x, y, size.x, size.y), text);
-// }
-//
-// public void OnGUI()
-// {
-//     float LINESPACING = 20f;
-//     
-//     if (!Camera.main) return;
-//     var worldPoint = transform.position + Vector3.up * 5f;
-//     Vector2 p = Camera.main.WorldToScreenPoint(worldPoint);
-//
-//     float lineIndex = 0;
-//
-//     DrawLabel(p, _wizardName, lineIndex * LINESPACING);
-//     lineIndex++;
-//
-//     DrawLabel(p, $"Health: {_health}", lineIndex * LINESPACING);
-//     lineIndex++;
-//
-//     DrawLabel(p, $"Mana: {_currentMana}", lineIndex * LINESPACING);
-//     lineIndex++;
-//
-//     string currentSpellLabel = _currentSpell != null
-//         ? $ "Current Spell: {_currentSpell.GetSpellName}"
-//         : $ "No Spell";
-//
-//     DrawLabel(p, currentSpellLabel, lineIndex * LINESPACING);
-// }
 
 /*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
