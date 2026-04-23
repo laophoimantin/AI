@@ -20,3 +20,4 @@ MonoBehaviour:
   _power: 20
   _successRate: 1
   _types: 00000000
+  LogEvaluation: 1

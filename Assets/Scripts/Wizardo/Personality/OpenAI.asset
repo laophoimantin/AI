@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: OpenAI
   Description: Raw machine, precise, no room for mistake
-  Aggression: 1.1
-  Caution: 0.9
+  Aggression: 1
+  Caution: 1
   Utility: 1
-  RiskTaking: 0.3
+  RiskTaking: 0
   Randomness: 0

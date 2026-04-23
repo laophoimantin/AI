@@ -19,5 +19,5 @@ MonoBehaviour:
   Aggression: 0.863
   Caution: 2
   Utility: 1.25
-  RiskTaking: 0
+  RiskTaking: 0.12
   Randomness: 0.05

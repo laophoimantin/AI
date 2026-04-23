@@ -22,7 +22,7 @@ namespace Spells
             // Base Effectiveness
             float enemyKillable = SpellFuzzyEvaluator.EnemyKillable(damageOnHit, target.CurrentHealth);
             float enemyLowHealth = SpellFuzzyEvaluator.EnemyLowHealth(healthPercent);
-            float highAccuracy = SpellFuzzyEvaluator.HighAccuracy(accuracy);
+            float highAccuracy = SpellFuzzyEvaluator.HighAccuracy(accuracy); //Is this spell highly accurate ?
 
             float cheapMana = SpellFuzzyEvaluator.CheapManaRatio(ManaCost, user.MaxMana);
             float excessMana = SpellFuzzyEvaluator.ExcessMana(user.CurrentMana, user.MaxMana);

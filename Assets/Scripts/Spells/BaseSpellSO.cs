@@ -65,11 +65,8 @@ namespace Spells
         [SerializeField] protected StrategyAlignment _alignment = StrategyAlignment.BalancedOnly;
         public StrategyAlignment Alignment => _alignment;
 
-
-
-        
         // CORE LOGIC =======
-        
+
         /// <summary>
         /// The public entry point for the AI to judge this spell.
         /// Acts as a "Gatekeeper" to filter out invalid moves (no mana, target dead...)

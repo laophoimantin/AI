@@ -33,7 +33,7 @@ public class AIBrainVisualizer : MonoBehaviour
         if (wizard.Personality != null)
         {
             sb.AppendLine($"<size=80%><color=#AAAAAA>Personality: {wizard.Personality.Name}</color>");
-            sb.AppendLine($"<color=#888888>Agg: {wizard.Personality.Aggression:F1} | Cau: {wizard.Personality.Caution:F1} | Uti: {wizard.Personality.Utility:F1}</color></size>");
+            sb.AppendLine($"<color=#888888>Agg: {wizard.Personality.Aggression:F1} | Cau: {wizard.Personality.Caution:F1} | Uti: {wizard.Personality.Utility:F1} | Ran: {wizard.Personality.Randomness:F1}</color></size>");
         }
         sb.AppendLine("---------------------------------------");
 

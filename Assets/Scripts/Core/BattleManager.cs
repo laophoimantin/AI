@@ -44,6 +44,8 @@ namespace Core
 
         private int _currentRound = 1;
 
+        private Coroutine _battleCoroutine;
+
         public event Action OnTurnChanged;
 
         void Awake()
@@ -66,22 +68,37 @@ namespace Core
                 return;
             }
 
+            StartNewMatch();
+        }
+
+        public void RestartBattleButton()
+        {
+            StartNewMatch();
+        }
+
+        private void StartNewMatch()
+        {
+            if (_battleCoroutine != null)
+            {
+                StopCoroutine(_battleCoroutine);
+            }
+
+            _currentRound = 1;
+            UpdateRoundUI();
+            DisplayCombatMessage("Setting up new battle");
+
             if (_applyNewPers)
             {
-                // Pick Random Personality
                 int redRandomIndex = Random.Range(0, _personalityPool.Count);
                 PersonalitySO redPersonality = _personalityPool[redRandomIndex];
 
                 int blueRandomIndex = Random.Range(0, _personalityPool.Count);
-                if (redRandomIndex == blueRandomIndex) // Prevent the same personality
+                if (redRandomIndex == blueRandomIndex)
                 {
-                    blueRandomIndex++;
-                    if (blueRandomIndex >= _personalityPool.Count) blueRandomIndex = 0;
+                    blueRandomIndex = (blueRandomIndex + 1) % _personalityPool.Count;
                 }
-
                 PersonalitySO bluePersonality = _personalityPool[blueRandomIndex];
 
-                // Initialize the wizards
                 _redWizard.Initialize(_spellBook, redPersonality);
                 _blueWizard.Initialize(_spellBook, bluePersonality);
             }
@@ -91,10 +108,8 @@ namespace Core
                 _blueWizard.Initialize(_spellBook);
             }
 
-            // Start the battle
-            StartCoroutine(SimulateBattle());
+            _battleCoroutine = StartCoroutine(SimulateBattle());
         }
-
 
         /// <summary>
         /// Simulates a turn-based battle between the two wizards.

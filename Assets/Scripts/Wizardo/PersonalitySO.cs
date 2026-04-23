@@ -11,6 +11,7 @@ namespace Wizardo
     public class PersonalitySO : ScriptableObject
     {
         [Header("Profile")]
+        [Header("Core Traits")]
         public string Name;
         [TextArea(3, 5)] public string Description;
         
@@ -46,5 +47,7 @@ namespace Wizardo
                 default: return 1.0f;
             }
         }
+
+
     }
 }

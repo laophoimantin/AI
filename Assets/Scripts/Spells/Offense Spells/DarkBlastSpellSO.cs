@@ -16,17 +16,17 @@ namespace Spells
         {
             // Input variables
             float damageOnHit = target.EstimateIncomingDamage(_power);
-            float healthPercent = target.HealthPercent;
+            float targetHealthPercent = target.HealthPercent;
             float accuracy = GetPerceivedAccuracy(user);
 
             // Base Effectiveness
             float enemyKillable = SpellFuzzyEvaluator.EnemyKillable(damageOnHit, target.CurrentHealth);
             // Main strength: High Opening Damage
-            float openingMove = OffensiveSpellFuzzy.OpeningMove(healthPercent);
+            //Opening Move (if the enemy has a high amount of health)
+            float openingMove = FuzzyMath.GradeUp(targetHealthPercent, 0.6f, 0.9f);
             float highAccuracy = SpellFuzzyEvaluator.HighAccuracy(accuracy);
             float cheapMana = SpellFuzzyEvaluator.CheapManaRatio(ManaCost, user.MaxMana);
             // Risk-Reward: low accuracy but high damage = (gambler)
-            float riskReward = OffensiveSpellFuzzy.HighRiskHighReward(accuracy, damageOnHit, target.MaxHealth);
 
             //RULES ==========
             // Rule 1: Opening 
@@ -36,6 +36,12 @@ namespace Spells
             float ruleFinisher = OffensiveSpellFuzzy.ReliableFinisher(enemyKillable, highAccuracy) * 0.4f;
 
             // Rule 3: Risk-Reward (liều ăn nhiều)
+
+            float riskReward = FuzzyMath.AND(
+            FuzzyMath.GradeDown(accuracy, 0.3f, 0.7f),  // High Risk
+            FuzzyMath.GradeUp(damageOnHit, target.MaxHealth * 0.5f, target.MaxHealth * 1.5f)  // High Reward
+        );
+
             float ruleGamble = riskReward * 0.7f;
 
             // Rule 4: Base

@@ -280,6 +280,7 @@ namespace Wizardo
                             maxBias = bias;
                     }
                     personalityMod = maxBias > 0f ? maxBias : 1.0f;
+                    personalityMod = Mathf.Clamp(personalityMod, 0.1f, 4.0f); 
                     finalScore *= personalityMod;
 
                     // Apply Chaos/Randomness 
@@ -327,6 +328,14 @@ namespace Wizardo
                 foreach (var loser in losers)
                 {
                     _scoreDict.Remove(loser);
+
+                    var debugData = LastTurnData.Find(x => x.SpellName == loser.BaseSpell.Name);
+                    if (debugData != null)
+                    {
+                        debugData.SpellName = $"<color=grey><s>{debugData.SpellName}</s></color>";
+                        debugData.WinChance = 0f; 
+                    }
+
                 }
             }
 
