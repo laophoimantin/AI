@@ -14,6 +14,8 @@ namespace Spells
     {
         protected override float EvaluateInternal(Agent user, Agent target)
         {
+            // New fuzzy logic 
+
             // Input variables
             float damageOnHit = target.EstimateIncomingDamage(_power); 
             float healthPercent = target.HealthPercent;

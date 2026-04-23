@@ -28,6 +28,8 @@ namespace Spells
 
         protected override float EvaluateInternal(Agent user, Agent target)
         {
+            // New fuzzy logic 
+
             // Safety checks
             if (_reductionPercent >= 1.0f) _reductionPercent = 0.99f;
             if (_reductionPercent < 0f) return 0f;
@@ -91,6 +93,10 @@ namespace Spells
         }
 
 
+
+        // Old crisp logic
+
+
         //protected override float EvaluateInternal(Agent user, Agent target)
         //{
         //    // Safety checks
@@ -102,7 +108,7 @@ namespace Spells
         //    // Calculate Probability
         //    // Check if the user would actually risk using this spell if the spell has low accuracy
         //    float perceivedAccuracy = GetPerceivedAccuracy(user);
-            
+
         //    // 1. Base Effectiveness
         //    // The higher the reduction percent, the more effective the shield is
         //    // Formula: Durability / (1 - reductionPercent)
@@ -129,7 +135,7 @@ namespace Spells
         //            return 0;
         //        }
         //    }
-            
+
         //    // 3. Survival Priorities 
         //    // Critical: If the user is near death (< 30%), ignores this shield
         //    if (user.HealthPercent < 0.3f)

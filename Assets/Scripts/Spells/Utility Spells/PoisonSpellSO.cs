@@ -20,6 +20,8 @@ namespace Spells
 
         protected override float EvaluateInternal(Agent user, Agent target)
         {
+            // New fuzzy logic 
+
             // Gatekeeper
             // Target is already poisoned -> no need to reapply and waste mana
             if (target.HasStatus<PoisonedStatus>()) return 0f;
@@ -92,6 +94,9 @@ namespace Spells
 
             return score;
         }
+
+
+        // Old crisp logic
 
 
         //protected override float EvaluateInternal(Agent user, Agent target)

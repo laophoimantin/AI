@@ -12,6 +12,8 @@ namespace Spells
     {
         protected override float EvaluateInternal(Agent user, Agent target)
         {
+            // New fuzzy logic 
+
             // Input variables
             float missingHealth = user.MaxHealth - user.CurrentHealth;
             float actualHeal = Mathf.Min(missingHealth, _power);
@@ -78,15 +80,18 @@ namespace Spells
             return score;
         }
 
+        // Old crisp logic
+
+
         //protected override float EvaluateInternal(Agent user, Agent target)
         //{
         //    // 1. Base Effectiveness Calculation =================================================
         //    // If the user is already at full health (> 90%), the spell is not effective
         //    float missingHealth = user.MaxHealth - user.CurrentHealth;
         //    float actualHeal = Mathf.Min(missingHealth, _power);
-            
+
         //    _spellScore = actualHeal;
-            
+
         //    //3. Efficiency Check
         //    float efficiency = actualHeal / _power; 
 
@@ -96,7 +101,7 @@ namespace Spells
         //        // If the user is wasting more than 40% of the spell, don't use it.
         //        if (efficiency < 0.4f) return 0; 
         //    }
-            
+
         //    // 2. Survival Priorities
         //    // Critical: If the user is near death (< 30%), bonus points
         //    if (user.HealthPercent < 0.3f) 
@@ -109,22 +114,22 @@ namespace Spells
         //    {
         //        _spellScore *= 1.7f;
         //    }
-            
+
         //    // 3. Shield Context 
         //    // If the user is on low Hp but has a Shield, lower the score
         //    if (user.HasShield && user.DurabilityPercent > 0.3f)
         //    {
         //        _spellScore *= 0.8f;
         //    }
-            
+
         //    // 4. Costs 
         //    // Mana cost penalty
         //    _spellScore -= _manaCost * 0.5f;
-            
+
         //    // Return the score
         //    return Mathf.Max(0, _spellScore);
         //}
-        
+
         protected override void SpellEffect(Agent user, Agent target)
         {
             // Heal the user

@@ -14,6 +14,8 @@ namespace Spells
 
         protected override float EvaluateInternal(Agent user, Agent target)
         {
+            // New fuzzy logic 
+
             // Gatekeeper
             if (user.CurrentHealth <= _sacrificedHealth + 15f) return 0f; // Prevent Suside 
 
@@ -82,6 +84,9 @@ namespace Spells
 
             return score;
         }
+
+        // Old crisp logic
+
 
         //protected override float EvaluateInternal(Agent user, Agent target)
         //{

@@ -53,6 +53,13 @@ public class AIBrainVisualizer : MonoBehaviour
                 string arrow = data.IsWinner ? "►" : " ";
 
                 string spellName = data.SpellName.Length > 12 ? data.SpellName.Substring(0, 12) : data.SpellName.PadRight(12);
+
+                if (data.IsCulled)
+                {
+                    spellName = $"<color=grey><s>{spellName}</s></color>";
+                    colorTag = "<color=grey>";
+                    endTag = "</color>";
+                }
                 string raw = data.RawScore.ToString("0").PadLeft(4);
                 string mod = data.PersonalityMod.ToString("0.0").PadLeft(4);
                 string final = data.FinalScore.ToString("0.0").PadLeft(5);

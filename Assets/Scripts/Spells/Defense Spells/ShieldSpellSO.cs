@@ -25,6 +25,8 @@ namespace Spells
 
         protected override float EvaluateInternal(Agent user, Agent target)
         {
+            // New fuzzy logic 
+
             // Safety checks
             if (_reductionPercent >= 1.0f) _reductionPercent = 0.99f;
             if (_reductionPercent < 0f) return 0f;
@@ -93,6 +95,8 @@ namespace Spells
             return score;
         }
 
+        // Old crisp logic
+
         //protected override float EvaluateInternal(Agent user, Agent target)
         //{
         //    // Safety checks
@@ -104,12 +108,12 @@ namespace Spells
         //    // Calculate Probability
         //    // Check if the user would actually risk using this spell if the spell has low accuracy
         //    float perceivedAccuracy = GetPerceivedAccuracy(user);
-            
+
         //    // 1. Base Effectiveness
         //    // The higher the reduction percent, the more effective the shield is
         //    // Formula: Durability / (1 - reductionPercent)
         //    _spellScore = _shieldDurability / (1.0f - _reductionPercent);
-            
+
         //    // 2. Situational Modifiers
         //    if (user.HasShield)
         //    {
@@ -124,7 +128,7 @@ namespace Spells
         //            return 0;
         //        }
         //    }
-            
+
         //    // 3. Survival Priorities
         //    // Critical: If the user is near death (< 30%), need a shield to survive
         //    if (user.HealthPercent < 0.3f)
@@ -137,7 +141,7 @@ namespace Spells
         //    {
         //        _spellScore *= 1.5f;
         //    }
-            
+
         //    // 4. Counters
         //    // Counter-Play: If the enemy has Mana (>40%) to deal high damage, a shield would be a good idea
         //    if (target.ManaPercent > 0.4f)
@@ -150,7 +154,7 @@ namespace Spells
         //    _spellScore *= perceivedAccuracy;
         //    // Mana cost penalty
         //    _spellScore -= _manaCost * 0.5f;
-            
+
         //    // Return the score
         //    return Mathf.Max(0, _spellScore);
         //}

@@ -24,6 +24,8 @@ namespace Wizardo
         public float FinalScore;
         public float WinChance;
         public bool IsWinner;
+
+        public bool IsCulled;
     }
 
     /// <summary>
@@ -186,7 +188,7 @@ namespace Wizardo
             // No available actions =>  no threat
             if (enemyScores.Count == 0) return 0f;
 
-            // Get the highest-priority spell
+            // Get the highest priority spell
             var enemyBestSpell = enemyScores.OrderByDescending(x => x.Value).First().Key;
 
             // Check if the spell is offensive
@@ -195,7 +197,7 @@ namespace Wizardo
                 // Estimate damage as a percentage of max health
                 float predictedDamagePercent = enemyBestSpell.BaseSpell.Power / this.MaxHealth;
 
-                // Map damage to threat level using fuzzy logic
+                // Map damage to threat level
                 // ~ 10% damage => low threat, ~30% => high threat
                 return FuzzyMath.GradeUp(predictedDamagePercent, 0.1f, 0.3f);
             }
@@ -215,6 +217,7 @@ namespace Wizardo
             _scoreDict.Clear();
 
 
+            // New ===========================================================
             // Dynamic Context --------------------------------------
             // 1.1. Survival instinct: lower health increases the desire to defend.
             float defenseBoost = FuzzyMath.GradeDown(HealthPercent, 0.2f, 0.6f);
@@ -224,9 +227,9 @@ namespace Wizardo
 
             // 1.3. Resource pressure: lower mana increases the need for utility (mana recovery).
             float manaPanic = FuzzyMath.GradeDown(ManaPercent, 0.1f, 0.3f);
-            // --------------------------------------
 
 
+            // New ===========================================================
             //Precognition ------------------------------
             float incomingThreat = 0f;
             if (!isSimulating)
@@ -332,8 +335,8 @@ namespace Wizardo
                     var debugData = LastTurnData.Find(x => x.SpellName == loser.BaseSpell.Name);
                     if (debugData != null)
                     {
-                        debugData.SpellName = $"<color=grey><s>{debugData.SpellName}</s></color>";
-                        debugData.WinChance = 0f; 
+                        debugData.IsCulled = true;
+                        debugData.WinChance = 0f;
                     }
 
                 }

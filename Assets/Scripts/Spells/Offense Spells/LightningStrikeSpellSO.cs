@@ -11,6 +11,8 @@ namespace Spells
     {
         protected override float EvaluateInternal(Agent user, Agent target)
         {
+            // New fuzzy logic 
+
             // Input variables
             float damageOnHit = target.EstimateIncomingDamage(_power, true);
             float healthPercent = target.HealthPercent;
@@ -68,6 +70,9 @@ namespace Spells
 
             return score;
         }
+
+        // Old crisp logic
+
         //protected override float EvaluateInternal(Agent user, Agent target)
         //{
         //    // Calculate Probability
@@ -93,7 +98,7 @@ namespace Spells
         //            _spellScore *= 1.2f; // Small shield, small bonus
         //        }
         //    }
-            
+
         //    // 3. Kill Confirmation
         //    // If the target can be killed using this spell, make it worth a lot
         //    if (damageOnHit >= target.CurrentHealth)
