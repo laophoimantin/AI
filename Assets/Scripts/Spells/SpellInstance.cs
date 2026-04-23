@@ -51,20 +51,22 @@ namespace Spells
         }
 
         // Executes the spell.
-        public void ExecuteSpell(Agent user, Agent enemy)
+        public bool ExecuteSpell(Agent user, Agent enemy)
         {
             // Double-check 
-            if (!IsReady(user))
-                return;
-            
+            if (!IsReady(user)) 
+                return false;
+
             // Consume Mana
             user.ReduceMana(BaseSpell.ManaCost);
             // Apply Effect
-            BaseSpell.ApplyEffect(user, enemy);
+            bool isSuccess = BaseSpell.ApplyEffect(user, enemy);
             // Reset Cooldown
             _currentCooldown = BaseSpell.CooldownTurns;
 
             UpdateUI();
+
+            return isSuccess;
         }
         
         

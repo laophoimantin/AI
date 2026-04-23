@@ -122,9 +122,16 @@ namespace Core
                 // Display the turn indicator (arrow)
                 if (_turnArrowText != null)
                 {
-                    _turnArrowText.text = redTurn ? "<=====" : "=====>";
-                    _turnArrowText.color = redTurn ? Color.red : Color.blue;
+                    if (redTurn)
+                    {
+                        _turnArrowText.text = "<color=red>RED</color>  ¤======>>>  <color=grey>BLUE</color>";
+                    }
+                    else
+                    {
+                        _turnArrowText.text = "<color=grey>RED</color>  <<<======¤  <color=blue>BLUE</color>";
+                    }
                 }
+
 
                 // The Agent calculates logic and performs the spell...
                 currentAgent.TakeTurn(targetAgent);

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _name: Fire Ball
   _description: Standard Damage Source
-  _icon: {fileID: 21300000, guid: 73488be0ad867834896528efa2bdb7db, type: 3}
+  _icon: {fileID: 340122264, guid: 9ca758a1daee5a243ad6182a622c8ae6, type: 3}
   _manaCost: 15
   _cooldownTurns: 3
   _power: 20

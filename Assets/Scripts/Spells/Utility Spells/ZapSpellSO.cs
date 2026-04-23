@@ -2,12 +2,15 @@ using UnityEngine;
 using Wizardo;
 using StatusEffects;
 
+
 namespace Spells
 {
     /// <summary>
     /// The "Filler" Spell. Low cost, low cooldown, stacking damage.
     /// Good for finishing off enemies, countering shields, or saving mana?
     /// Maybe the AI prioritizes this when Mana is low
+    /// 
+    /// NO LONGER IN USE
     /// </summary>
     [CreateAssetMenu(menuName = "Spells/Zap")]
     public class ZapSpellSO : BaseSpellSO

@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _name: Dark Blast
   _description: Big button, high risk, high reward (low accuracy, high damage)
-  _icon: {fileID: 21300000, guid: e88b107a0c6177d4aaef31c31ec9ca35, type: 3}
+  _icon: {fileID: 1195770920, guid: 9ca758a1daee5a243ad6182a622c8ae6, type: 3}
   _manaCost: 30
   _cooldownTurns: 6
   _power: 35
-  _successRate: 0.361
+  _successRate: 0.364
   _types: 00000000

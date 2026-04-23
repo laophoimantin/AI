@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Wizardo.AI
+namespace Wizardo
 {
     public static class FuzzyMath
     {

@@ -3,17 +3,30 @@ using Wizardo;
 
 namespace Spells
 {
-    
+    public struct StrategyAlignment
+    {
+        [Range(0f, 1f)] public float Aggressive;
+        [Range(0f, 1f)] public float Defensive;
+        [Range(0f, 1f)] public float Balanced;
+
+        public static StrategyAlignment PureOffense => new() { Aggressive = 1f, Balanced = 0.2f };
+        public static StrategyAlignment PureDefense => new() { Defensive = 1f, Balanced = 0.2f };
+        public static StrategyAlignment Hybrid => new() { Aggressive = 0.5f, Defensive = 0.5f, Balanced = 0.5f };
+        public static StrategyAlignment BalancedOnly => new() { Balanced = 1f };
+    }
+
+    public struct StrategyContext
+    {
+        public float Aggressive;
+        public float Defensive;
+        public float Balanced;
+    }
+
     public enum SpellType { Offense, Defense, Utility}
     
-    /// <summary>
-    /// The abstract base class for all Spell Data.
-    /// Defines the shared properties (mana, power, cooldown...) and the contract for AI evaluation.
-    /// </summary>
     public abstract class BaseSpellSO : ScriptableObject
     {
         // DATA CONFIGURATION ======
-        
         [Header("Identity")]
         [SerializeField] protected string _name;
         [TextArea] [SerializeField] protected string _description; 
@@ -38,7 +51,6 @@ namespace Spells
         
         
         // Public Getters ======
-        
         public string Name => _name;
         public string Description => _description;
         public Sprite Icon => _icon;
@@ -47,20 +59,13 @@ namespace Spells
         public SpellType[] Types => _types;
         public float Power => _power;
         public float SuccessRate => _successRate;
-        
-        
-        // ABSTRACT CONTRACTS =======
-        
-        /// <summary>
-        /// Calculates a "Utility Score" for this spell based on the current battle state.
-        /// High Score = AI is more likely to cast this.
-        /// </summary>
-        protected abstract float EvaluateInternal(Agent user, Agent target);
-        /// <summary>
-        /// The unique logic for the spell (deal damage, add status...).
-        /// This is only called if the cast succeeds.
-        /// </summary>
-        protected abstract void SpellEffect(Agent user, Agent target);
+
+
+        [Header("AI Strategy Alignment")]
+        [SerializeField] protected StrategyAlignment _alignment = StrategyAlignment.BalancedOnly;
+        public StrategyAlignment Alignment => _alignment;
+
+
 
         
         // CORE LOGIC =======
@@ -79,16 +84,28 @@ namespace Spells
         }
 
         /// <summary>
+        /// Calculates a "Utility Score" for this spell based on the current battle state.
+        /// High Score = AI is more likely to cast this.
+        /// </summary>
+        protected abstract float EvaluateInternal(Agent user, Agent target);
+        /// <summary>
+        /// The unique logic for the spell (deal damage, add status...).
+        /// This is only called if the cast succeeds.
+        /// </summary>
+        protected abstract void SpellEffect(Agent user, Agent target);
+
+
+        /// <summary>
         /// Attempts to cast the spell.
         /// Handles the Dice Roll (success/fail).
         /// </summary>
-        public void ApplyEffect(Agent user, Agent target)
+        public bool ApplyEffect(Agent user, Agent target)
         {
             // Note: Mana consumption is handled by the SpellInstance, not here.
-            TryCast(user, target);
+            return TryCast(user, target);
         }
-        
-        private void TryCast(Agent user, Agent target)
+
+        private bool TryCast(Agent user, Agent target)
         {
             // Roll the dice
             if (CheckHitSuccess())
@@ -96,17 +113,17 @@ namespace Spells
                 //Success: Execute
                 SpellEffect(user,target);
                 Debug.Log($"{user.Name} successful to cast with {_name}!");
+                return true;
             }
             else
             {
                 // Fail: Do nothing
                 Debug.Log($"{user.Name} failed to cast with {_name}!");
+                return false;
             }
         }
         
-        /// <summary>
         /// Rolls a random float (0.0 to 1.0) against the Success Rate.
-        /// </summary>
         private bool CheckHitSuccess()
         {
             float roll = Random.Range(0f, 1f);

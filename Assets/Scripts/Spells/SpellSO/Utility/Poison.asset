@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _name: Poison
   _description: Poisons the target for a short duration.
-  _icon: {fileID: 21300000, guid: 199e2047b64a7ee47bd82cd9b90dda7a, type: 3}
+  _icon: {fileID: -1808437002, guid: 9ca758a1daee5a243ad6182a622c8ae6, type: 3}
   _manaCost: 20
   _cooldownTurns: 4
   _power: 4

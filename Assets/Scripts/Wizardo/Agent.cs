@@ -1,11 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Core;
 using GameUI;
 using Spells;
-using UnityEngine;
 using StatusEffects;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using TMPro;
+using UnityEngine;
+using static UnityEngine.EventSystems.EventTrigger;
 
 namespace Wizardo
 {
@@ -40,6 +43,8 @@ namespace Wizardo
         [Header("AI Personality")]
         [SerializeField] private PersonalitySO _personality;
         public PersonalitySO Personality => _personality;
+        private readonly Dictionary<SpellInstance, float> _scoreDict = new();
+
 
 
         [Header("Wizard Stats")]
@@ -80,6 +85,7 @@ namespace Wizardo
         public float DurabilityPercent => _currentBaseShield?.DurabilityPercent == null ? 0 : _currentBaseShield.DurabilityPercent;
 
 
+
         public event Action<StatusEffect> OnStatusApply;
         public event Action<StatusEffect> OnStatusRemove;
 
@@ -88,6 +94,8 @@ namespace Wizardo
         [HideInInspector] public List<SpellDecisionDebug> LastTurnData = new();
         [HideInInspector] public float LastTotalWeight;
         [HideInInspector] public float LastWinningTicket;
+
+
 
 
         void OnDisable()
@@ -121,13 +129,13 @@ namespace Wizardo
             if (personality != null)
             {
                 _personality = personality;
-                OnPersonalityChanged?.Invoke(_personality); 
+                OnPersonalityChanged?.Invoke(_personality);
             }
 
             if (BattleManager.Instance != null)
             {
                 BattleManager.Instance.OnTurnChanged -= HandleTurnChanged;
-                BattleManager.Instance.OnTurnChanged += HandleTurnChanged; 
+                BattleManager.Instance.OnTurnChanged += HandleTurnChanged;
             }
         }
 
@@ -144,6 +152,11 @@ namespace Wizardo
         {
             if (!IsAlive) return;
 
+            StartCoroutine(TakeTurnCourontine(enemy));
+        }
+
+        private IEnumerator TakeTurnCourontine(Agent enemy)
+        {
             // Process effects if the AI has any (start of turn)
             ProcessEffects(true);
 
@@ -156,6 +169,7 @@ namespace Wizardo
             // Phase 2: Decision
             SpellInstance chosenSpell = SelectSpellWeighted(spellScores);
 
+            yield return new WaitForSeconds(1f);
             // Phase 3: Action
             TryCastSelectedSpellOn(chosenSpell, enemy);
 
@@ -164,14 +178,61 @@ namespace Wizardo
         }
 
 
+        private float PredictEnemyIntent(Agent enemy)
+        {
+            // Evaluate the enemy’s spell choice
+            var enemyScores = enemy.EvaluateAvailableSpells(this, true);
+
+            // No available actions =>  no threat
+            if (enemyScores.Count == 0) return 0f;
+
+            // Get the highest-priority spell
+            var enemyBestSpell = enemyScores.OrderByDescending(x => x.Value).First().Key;
+
+            // Check if the spell is offensive
+            if (enemyBestSpell.BaseSpell.Types.Contains(SpellType.Offense))
+            {
+                // Estimate damage as a percentage of max health
+                float predictedDamagePercent = enemyBestSpell.BaseSpell.Power / this.MaxHealth;
+
+                // Map damage to threat level using fuzzy logic
+                // ~ 10% damage => low threat, ~30% => high threat
+                return FuzzyMath.GradeUp(predictedDamagePercent, 0.1f, 0.3f);
+            }
+
+            // Non-offensive actions (heal, shield, mana) => no immediate threat
+            return 0f;
+        }
+
+
         /// <summary>
         /// Scores every spell in the spellbook based on the current combat state.
         /// Applies Personality Modifiers and Random Noise to the scores (to make the AI more unpredictable and random).
         /// </summary>
-        private Dictionary<SpellInstance, float> EvaluateAvailableSpells(Agent enemy)
+        private Dictionary<SpellInstance, float> EvaluateAvailableSpells(Agent enemy, bool isSimulating = false)
         {
             // 1. Evaluation
-            var scoreDict = new Dictionary<SpellInstance, float>();
+            _scoreDict.Clear();
+
+
+            // Dynamic Context --------------------------------------
+            // 1.1. Survival instinct: lower health increases the desire to defend.
+            float defenseBoost = FuzzyMath.GradeDown(HealthPercent, 0.2f, 0.6f);
+
+            // 1.2. Finishing instinct: lower enemy health increases the desire to finish them.
+            float killBoost = FuzzyMath.GradeDown(enemy.HealthPercent, 0.1f, 0.4f);
+
+            // 1.3. Resource pressure: lower mana increases the need for utility (mana recovery).
+            float manaPanic = FuzzyMath.GradeDown(ManaPercent, 0.1f, 0.3f);
+            // --------------------------------------
+
+
+            //Precognition ------------------------------
+            float incomingThreat = 0f;
+            if (!isSimulating)
+            {
+                incomingThreat = PredictEnemyIntent(enemy);
+            }
 
             // Evaluate all spells
             foreach (var spellInstance in _spellBook)
@@ -196,55 +257,80 @@ namespace Wizardo
                 {
                     // Apply Type Bias (aggressive wizards boost offense spells)
                     // Formula: Score *= Modifier (Personality)
+                    float maxBias = 0f;
                     foreach (var type in spellInstance.BaseSpell.Types)
                     {
-                        personalityMod = _personality.GetModifierForType(type);
-                        finalScore *= personalityMod;
+                        float bias = _personality.GetModifierForType(type);
+
+                        switch (type)
+                        {
+                            case SpellType.Defense:
+                                bias *= Mathf.Lerp(1f, 3f, defenseBoost); //Defense stronger when health is critical.
+                                bias *= Mathf.Lerp(1f, 4f, incomingThreat); // If enemy is about to strike, block
+                                break;
+                            case SpellType.Offense:
+                                bias *= Mathf.Lerp(1f, 2.5f, killBoost); // Offense increases significantly when the enemy is low.
+                                break;
+                            case SpellType.Utility:
+                                bias *= Mathf.Lerp(1f, 2.2f, manaPanic); // Prioritize mana recovery when resources are low.
+                                break;
+                        }
+
+                        if (bias > maxBias)
+                            maxBias = bias;
                     }
+                    personalityMod = maxBias > 0f ? maxBias : 1.0f;
+                    finalScore *= personalityMod;
 
                     // Apply Chaos/Randomness 
                     // (Higher randomness = the AI’s choices become more unpredictable)
                     // Formula: Score *= Randomness
-                    noise = UnityEngine.Random.Range(1.0f - _personality.Randomness, 1.0f + _personality.Randomness);
-                    finalScore *= noise;
+                    if (!isSimulating)
+                    {
+                        noise = UnityEngine.Random.Range(1.0f - _personality.Randomness, 1.0f + _personality.Randomness);
+                        finalScore *= noise;
+                    }
                 }
 
                 //Store result
-                scoreDict.Add(spellInstance, finalScore);
+                _scoreDict.Add(spellInstance, finalScore);
 
                 // Capture debug data
-                LastTurnData.Add(new SpellDecisionDebug
+                if (!isSimulating)
                 {
-                    SpellName = spellInstance.BaseSpell.Name,
-                    RawScore = rawScore,
-                    PersonalityMod = personalityMod,
-                    Noise = noise,
-                    FinalScore = finalScore,
-                    IsWinner = false
-                });
+                    LastTurnData.Add(new SpellDecisionDebug
+                    {
+                        SpellName = spellInstance.BaseSpell.Name,
+                        RawScore = rawScore,
+                        PersonalityMod = personalityMod,
+                        Noise = noise,
+                        FinalScore = finalScore,
+                        IsWinner = false
+                    });
+                }
             }
 
             // 2. Acting smart
             // If the agent is smart (randomness <= 0.2), remove everything that isn't in the Top 3.
-            if (_personality != null && _personality.Randomness <= 0.2 && scoreDict.Count > 3)
+            if (_personality != null && _personality.Randomness <= 0.2 && _scoreDict.Count > 3)
             {
                 // Sort descending, take the top 3 Keys, and convert to a HashSet for fast lookup
-                var top3Spells = scoreDict.OrderByDescending(x => x.Value)
+                var top3Spells = _scoreDict.OrderByDescending(x => x.Value)
                     .Take(3)
                     .Select(x => x.Key)
                     .ToHashSet();
 
                 // Find the losers (keys not in the top 3)
-                var losers = scoreDict.Keys.Where(k => !top3Spells.Contains(k)).ToList();
+                var losers = _scoreDict.Keys.Where(k => !top3Spells.Contains(k)).ToList();
 
                 // Delete the losers
                 foreach (var loser in losers)
                 {
-                    scoreDict.Remove(loser);
+                    _scoreDict.Remove(loser);
                 }
             }
 
-            return scoreDict;
+            return _scoreDict;
         }
 
         /// <summary>
@@ -320,15 +406,24 @@ namespace Wizardo
             _currentSpell = spell;
             if (spell != null)
             {
-                spell.ExecuteSpell(this, target);
-                BattleManager.Instance.DisplayCombatMessage($"{Name} casts {_currentSpell.BaseSpell.Name}");
+                string spellName = _currentSpell.BaseSpell.Name;
+
+                bool success = spell.ExecuteSpell(this, target);
+                if (success)
+                {
+                    BattleManager.Instance.DisplayCombatMessage($"<color=#00FF00>{Name} successfully casts {spellName}!</color>");
+                }
+                else
+                {
+                    BattleManager.Instance.DisplayCombatMessage($"<color=#FF0000>{Name} casts {spellName}... but MISSED!</color>");
+                }
             }
             else // No valid spell found
             {
                 Debug.Log($"{_wizardName} has no valid spell to cast.");
                 BattleManager.Instance.DisplayCombatMessage($"{Name} skips turn (No valid spells).");
             }
-        }
+            }
 
 
         // Methods ======================================================================================================

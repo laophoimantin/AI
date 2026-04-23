@@ -18,7 +18,7 @@ MonoBehaviour:
 
     If the shield survives the full duration, it explodes dealing
     damage to the target.'
-  _icon: {fileID: 21300000, guid: 934cdc180e5885c48a894a291d7eccc3, type: 3}
+  _icon: {fileID: 2145376395, guid: 9ca758a1daee5a243ad6182a622c8ae6, type: 3}
   _manaCost: 20
   _cooldownTurns: 4
   _power: 30

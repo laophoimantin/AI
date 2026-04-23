@@ -29,76 +29,141 @@ namespace Spells
         protected override float EvaluateInternal(Agent user, Agent target)
         {
             // Safety checks
-            if (_reductionPercent <= 0)
-            {
-                Debug.Log("Reduction percent cannot be less than or equal to zero");
-                return 0;
-            }
-            // Calculate Probability
-            // Check if the user would actually risk using this spell if the spell has low accuracy
-            float perceivedAccuracy = GetPerceivedAccuracy(user);
-            
-            // 1. Base Effectiveness
-            // The higher the reduction percent, the more effective the shield is
-            // Formula: Durability / (1 - reductionPercent)
-            float effectiveShieldHp = _shieldDurability / (1.0f - _reductionPercent); // The Hp might be high but blocking efficiency is low
+            if (_reductionPercent >= 1.0f) _reductionPercent = 0.99f;
+            if (_reductionPercent < 0f) return 0f;
 
+            // Gatekeeper
+            // Already has shield + the shield is still durable
+            if (user.HasShield && user.DurabilityPercent > 0.4f) return 0f;
 
-            // Score = Defense + Offense (Explosion).
-            // Increase Reflected Damage value (1.2) because that's the main point of this spell.
-            _spellScore = effectiveShieldHp + (_power * 1.2f);
+            // Input variables
+            float effectiveShieldHp = _shieldDurability / (1.0f - _reductionPercent);
+            float baseValue = effectiveShieldHp + (_power * 1.2f);
+            float healthPercent = user.HealthPercent;
+            float accuracy = GetPerceivedAccuracy(user);
 
+            // Fuzzy sets
+            float criticalHealth = FuzzyMath.GradeDown(healthPercent, 0.2f, 0.5f);
+            float safeHealth = 1.0f - criticalHealth;
+            float enemyLowMana = FuzzyMath.GradeDown(target.ManaPercent, 0.3f, 0.6f);
+            float enemyHighMana = FuzzyMath.GradeUp(target.ManaPercent, 0.4f, 0.7f);
+            float cheapMana = SpellFuzzyEvaluator.CheapManaRatio(ManaCost, user.MaxMana);
 
-            // 2. Situational Modifiers
-            if (user.HasShield)
-            {
-                // Only replace an existing shield if it's about to break (< 30% durability)
-                // If the current shield is about to break, this spell is worth a bit
-                if (user.DurabilityPercent < 0.3f)
-                {
-                    _spellScore *= 0.6f; // Slight penalty for overlap
-                }
-                // If the shield is still strong, this spell is not worth it
-                else
-                {
-                    return 0;
-                }
-            }
-            
-            // 3. Survival Priorities 
-            // Critical: If the user is near death (< 30%), ignores this shield
-            if (user.HealthPercent < 0.3f)
-            {
-                _spellScore *= 0.2f; // This spell is not mainly for survival
-            }
-            // Warning: If health is low (< 70%), a shield would be a good idea
-            else if (user.HealthPercent < 0.7f)
-            {
-                _spellScore *= 1.2f; // This spell is not mainly for survival
-            }
+            // RULE EVALUATION
+            float rulePerfectSetup = FuzzyMath.AND(safeHealth, enemyLowMana);
 
-            // 4. Counters
-            // Counter-Play: if the enemy is low on mana (<30%), they're unlikely to use enough big spells to break this shield
-            // This spell has a chance to explode 
-            if (target.ManaPercent < 0.3f)
-            {
-                _spellScore *= 1.5f; // Bonus 
-            }
-            // Enemies have full mana and can break the shield instantly, so not worth it
-            else if (target.ManaPercent > 0.6f)
-            {
-                _spellScore *= 0.5f; 
-            }
+            // Rule 2
+            float ruleEasilyBroken = enemyHighMana;
 
-            // 5. Costs 
-            // Accuracy penalty
-            _spellScore *= perceivedAccuracy;
-            // Mana cost penalty
-            _spellScore -= _manaCost * 0.4f;
+            // Rule 3: This shield is not mainly for survive
+            float ruleBadSurvival = criticalHealth;
 
-            // Return the score
-            return Mathf.Max(0, _spellScore);
+            float ruleBase = 0.4f;
+
+            // DEFUZZIFICATION (Sugeno)
+            float valPerfectSetup = 2.5f; 
+            float valEasilyBroken = 0.5f;   
+            float valBadSurvival = 0.1f;  
+            float valBase = 1.0f;
+
+            float numerator = (rulePerfectSetup * valPerfectSetup) +
+                              (ruleEasilyBroken * valEasilyBroken) +
+                              (ruleBadSurvival * valBadSurvival) +
+                              (ruleBase * valBase);
+
+            float denominator = rulePerfectSetup + ruleEasilyBroken + ruleBadSurvival + ruleBase;
+            float sugenoMultiplier = numerator / denominator;
+
+            // FINAL
+            float score = baseValue * sugenoMultiplier;
+
+            // Penalty:
+            float overlapPenaltyMultiplier = user.HasShield ? 0.6f : 1.0f;
+            score *= overlapPenaltyMultiplier;
+
+            // Penalty: Mana
+            float manaPenaltyMultiplier = Mathf.Lerp(0.5f, 1.0f, cheapMana);
+            score *= manaPenaltyMultiplier;
+
+            score *= accuracy;
+
+            return score;
         }
+
+
+        //protected override float EvaluateInternal(Agent user, Agent target)
+        //{
+        //    // Safety checks
+        //    if (_reductionPercent <= 0)
+        //    {
+        //        Debug.Log("Reduction percent cannot be less than or equal to zero");
+        //        return 0;
+        //    }
+        //    // Calculate Probability
+        //    // Check if the user would actually risk using this spell if the spell has low accuracy
+        //    float perceivedAccuracy = GetPerceivedAccuracy(user);
+            
+        //    // 1. Base Effectiveness
+        //    // The higher the reduction percent, the more effective the shield is
+        //    // Formula: Durability / (1 - reductionPercent)
+        //    float effectiveShieldHp = _shieldDurability / (1.0f - _reductionPercent); // The Hp might be high but blocking efficiency is low
+
+
+        //    // Score = Defense + Offense (Explosion).
+        //    // Increase Reflected Damage value (1.2) because that's the main point of this spell.
+        //    _spellScore = effectiveShieldHp + (_power * 1.2f);
+
+
+        //    // 2. Situational Modifiers
+        //    if (user.HasShield)
+        //    {
+        //        // Only replace an existing shield if it's about to break (< 30% durability)
+        //        // If the current shield is about to break, this spell is worth a bit
+        //        if (user.DurabilityPercent < 0.3f)
+        //        {
+        //            _spellScore *= 0.6f; // Slight penalty for overlap
+        //        }
+        //        // If the shield is still strong, this spell is not worth it
+        //        else
+        //        {
+        //            return 0;
+        //        }
+        //    }
+            
+        //    // 3. Survival Priorities 
+        //    // Critical: If the user is near death (< 30%), ignores this shield
+        //    if (user.HealthPercent < 0.3f)
+        //    {
+        //        _spellScore *= 0.2f; // This spell is not mainly for survival
+        //    }
+        //    // Warning: If health is low (< 70%), a shield would be a good idea
+        //    else if (user.HealthPercent < 0.7f)
+        //    {
+        //        _spellScore *= 1.2f; // This spell is not mainly for survival
+        //    }
+
+        //    // 4. Counters
+        //    // Counter-Play: if the enemy is low on mana (<30%), they're unlikely to use enough big spells to break this shield
+        //    // This spell has a chance to explode 
+        //    if (target.ManaPercent < 0.3f)
+        //    {
+        //        _spellScore *= 1.5f; // Bonus 
+        //    }
+        //    // Enemies have full mana and can break the shield instantly, so not worth it
+        //    else if (target.ManaPercent > 0.6f)
+        //    {
+        //        _spellScore *= 0.5f; 
+        //    }
+
+        //    // 5. Costs 
+        //    // Accuracy penalty
+        //    _spellScore *= perceivedAccuracy;
+        //    // Mana cost penalty
+        //    _spellScore -= _manaCost * 0.4f;
+
+        //    // Return the score
+        //    return Mathf.Max(0, _spellScore);
+        //}
 
         protected override void SpellEffect(Agent user, Agent target)
         {

@@ -15,7 +15,7 @@ MonoBehaviour:
   _name: Normal Shield
   _description: A standard defense spell. Provides a shield that reduces incoming
     damage by a percentage.
-  _icon: {fileID: 21300000, guid: 26f37ea7ea7059e40b52f0ed2d9c0e0e, type: 3}
+  _icon: {fileID: -1451270042, guid: 9ca758a1daee5a243ad6182a622c8ae6, type: 3}
   _manaCost: 20
   _cooldownTurns: 3
   _power: 0
